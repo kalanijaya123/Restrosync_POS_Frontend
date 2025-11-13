@@ -9,6 +9,7 @@ import Payment from './pages/Payment'
 import OrderHistory from './pages/OrderHistory'
 import ManagerDashboard from './pages/ManagerDashboard'
 import Inventory from './pages/Inventory'
+import KitchenStatus from './pages/KitchenStatus'
 //import Settings from './pages/Settings'
 import OrderSummary from './pages/OrderSummary'
 
@@ -28,6 +29,7 @@ function App() {
               {<Route path="/history" element={<OrderHistory />} />}
               {<Route path="/manager" element={<ManagerDashboard />} />}
               {<Route path="/inventory" element={<Inventory />} />}
+              {<Route path="/status" element={<KitchenStatus />} />}
               {/* <Route path="/settings" element={<Settings />} /> */}
             </Routes>
           </Layout>

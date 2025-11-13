@@ -18,7 +18,7 @@ const Sidebar = () => {
         { to: '/history', label: 'Order History' },
         { to: '/manager', label: 'Manager' },
         { to: '/inventory', label: 'Inventory' },
-        { to: '/kitchen-status', label: 'Kitchen Status' },
+        { to: '/status', label: 'Kitchen Status' },
         { to: '/third-party', label: 'Third-Party' },
         { to: '/settings', label: 'Settings' },
     ]
