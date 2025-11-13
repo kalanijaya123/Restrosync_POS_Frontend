@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
-//import TableLayout from './pages/TableLayout'
+import TableLayout from './pages/TableLayout'
 //import OrderEntry from './pages/OrderEntry'
 //import Payment from './pages/Payment'
 ////import OrderHistory from './pages/OrderHistory'
@@ -19,7 +19,7 @@ function App() {
           <Layout>
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
-              {/* <Route path="/tables" element={<TableLayout />} /> */}
+              {<Route path="/tables" element={<TableLayout />} />}
               {/* <Route path="/orders" element={<OrderEntry />} /> */}
               {/* <Route path="/payment" element={<Payment />} /> */}
               {/* <Route path="/history" element={<OrderHistory />} /> */}
