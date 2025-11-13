@@ -1,19 +1,34 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
-import './index.css'
-import './App.css'
-import "tailwindcss";
+//import TableLayout from './pages/TableLayout'
+//import OrderEntry from './pages/OrderEntry'
+//import Payment from './pages/Payment'
+////import OrderHistory from './pages/OrderHistory'
+//import ManagerDashboard from './pages/ManagerDashboard'
+//import Settings from './pages/Settings'
+
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/*" element={
+          <Layout>
+            <Routes>
+              <Route path="/dashboard" element={<Dashboard />} />
+              {/* <Route path="/tables" element={<TableLayout />} /> */}
+              {/* <Route path="/orders" element={<OrderEntry />} /> */}
+              {/* <Route path="/payment" element={<Payment />} /> */}
+              {/* <Route path="/history" element={<OrderHistory />} /> */}
+              {/* <Route path="/manager" element={<ManagerDashboard />} /> */}
+              {/* <Route path="/settings" element={<Settings />} /> */}
+            </Routes>
+          </Layout>
+        } />
+      </Routes>
     </Router>
   )
 }

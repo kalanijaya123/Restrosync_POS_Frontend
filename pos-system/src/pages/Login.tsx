@@ -1,43 +1,36 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import "tailwindcss";
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+
 const Login: React.FC = () => {
-    const [pin, setPin] = useState('');
-    const navigate = useNavigate();
+    const [pin, setPin] = useState('')
+    const navigate = useNavigate()
 
     const handleLogin = () => {
-        if (pin === '1234') {
-            navigate('/dashboard');
-        } else {
-            alert('Wrong PIN! Try 1234');
-        }
-    };
+        if (pin === '1234') navigate('/dashboard')
+        else alert('Wrong PIN!')
+    }
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl shadow-2xl p-12 w-full max-w-md">
-                <h1 className="text-5xl font-bold text-center text-blue-600 mb-8">RestroSync</h1>
-                <p className="text-center text-gray-600 mb-10 text-xl">POS System</p>
-
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center">
+            <div className="bg-white p-16 rounded-2xl shadow-2xl w-full max-w-2xl">
+                <h1 className="text-6xl font-bold text-center text-indigo-700 mb-12">RestroSync POS</h1>
                 <input
                     type="password"
                     placeholder="Enter PIN"
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
-                    className="w-full px-6 py-5 border-2 border-gray-300 rounded-2xl text-3xl text-center focus:border-blue-500 focus:outline-none transition mb-8"
+                    className="w-full px-8 py-6 text-4xl text-center border-4 border-gray-300 rounded-2xl focus:border-indigo-600 mb-10"
                 />
-
                 <button
                     onClick={handleLogin}
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-6 rounded-2xl text-2xl shadow-lg transition transform hover:scale-105"
+                    className="w-full bg-indigo-700 hover:bg-indigo-800 text-white text-3xl font-bold py-8 rounded-2xl shadow-lg"
                 >
                     LOGIN
                 </button>
-
-                <p className="text-center mt-6 text-gray-500">Demo PIN: <span className="font-bold">1234</span></p>
+                <p className="text-center mt-8 text-gray-600 text-xl">Demo PIN: <strong>1234</strong></p>
             </div>
         </div>
-    );
-};
+    )
+}
 
-export default Login;
+export default Login
