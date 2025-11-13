@@ -10,7 +10,8 @@ import OrderHistory from './pages/OrderHistory'
 import ManagerDashboard from './pages/ManagerDashboard'
 import Inventory from './pages/Inventory'
 import KitchenStatus from './pages/KitchenStatus'
-//import Settings from './pages/Settings'
+import ThirdPartyOrders from './pages/ThirdPartyOrders'
+import Settings from './pages/Settings'
 import OrderSummary from './pages/OrderSummary'
 
 function App() {
@@ -30,7 +31,8 @@ function App() {
               {<Route path="/manager" element={<ManagerDashboard />} />}
               {<Route path="/inventory" element={<Inventory />} />}
               {<Route path="/status" element={<KitchenStatus />} />}
-              {/* <Route path="/settings" element={<Settings />} /> */}
+              {<Route path="/third-party" element={<ThirdPartyOrders />} />}
+              {<Route path="/settings" element={<Settings />} />}
             </Routes>
           </Layout>
         } />
