@@ -7,7 +7,7 @@ import TableLayout from './pages/TableLayout'
 import OrderEntry from './pages/OrderEntry'
 import Payment from './pages/Payment'
 import OrderHistory from './pages/OrderHistory'
-//import ManagerDashboard from './pages/ManagerDashboard'
+import ManagerDashboard from './pages/ManagerDashboard'
 //import Settings from './pages/Settings'
 import OrderSummary from './pages/OrderSummary'
 
@@ -25,7 +25,7 @@ function App() {
               {<Route path="/summary" element={<OrderSummary />} />}
               {<Route path="/payment" element={<Payment />} />}
               {<Route path="/history" element={<OrderHistory />} />}
-              {/* <Route path="/manager" element={<ManagerDashboard />} /> }
+              {<Route path="/manager" element={<ManagerDashboard />} />}
               {/* <Route path="/settings" element={<Settings />} /> */}
             </Routes>
           </Layout>
