@@ -4,11 +4,12 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import TableLayout from './pages/TableLayout'
-//import OrderEntry from './pages/OrderEntry'
+import OrderEntry from './pages/OrderEntry'
 //import Payment from './pages/Payment'
 ////import OrderHistory from './pages/OrderHistory'
 //import ManagerDashboard from './pages/ManagerDashboard'
 //import Settings from './pages/Settings'
+import OrderSummary from './pages/OrderSummary'
 
 function App() {
   return (
@@ -20,7 +21,8 @@ function App() {
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
               {<Route path="/tables" element={<TableLayout />} />}
-              {/* <Route path="/orders" element={<OrderEntry />} /> */}
+              {<Route path="/orders" element={<OrderEntry />} />}
+              {<Route path="/summary" element={<OrderSummary />} />}
               {/* <Route path="/payment" element={<Payment />} /> */}
               {/* <Route path="/history" element={<OrderHistory />} /> */}
               {/* <Route path="/manager" element={<ManagerDashboard />} /> */}

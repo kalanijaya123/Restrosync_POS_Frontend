@@ -1,84 +1,62 @@
 import React from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 
 const Sidebar = () => {
-    return (
-        <div className="w-64 bg-gray-900 text-white min-h-screen p-6 fixed left-0 top-0 flex flex-col">
-            {/* Smaller, elegant RestroSync title */}
-            <h1 className="text-base font-bold mb-12 text-left tracking-wider">
-                Restro
-                Sync
-            </h1>
+    const navigate = useNavigate()
 
-            <nav className="space-y-2 flex-1">
-                <NavLink
-                    to="/dashboard"
-                    className={({ isActive }) =>
-                        `block py-3 px-6 rounded-lg transition text-lg font-medium ${isActive ? 'bg-gray-700 shadow-lg' : 'hover:bg-gray-700'
-                        }`
-                    }
-                >
-                    Dashboard
-                </NavLink>
-                <NavLink
-                    to="/tables"
-                    className={({ isActive }) =>
-                        `block py-3 px-6 rounded-lg transition text-lg font-medium ${isActive ? 'bg-gray-700 shadow-lg' : 'hover:bg-gray-700'
-                        }`
-                    }
-                >
-                    Table Layout
-                </NavLink>
-                <NavLink
-                    to="/orders"
-                    className={({ isActive }) =>
-                        `block py-3 px-6 rounded-lg transition text-lg font-medium ${isActive ? 'bg-gray-700 shadow-lg' : 'hover:bg-gray-700'
-                        }`
-                    }
-                >
-                    Order Entry
-                </NavLink>
-                <NavLink
-                    to="/payment"
-                    className={({ isActive }) =>
-                        `block py-3 px-6 rounded-lg transition text-lg font-medium ${isActive ? 'bg-gray-700 shadow-lg' : 'hover:bg-gray-700'
-                        }`
-                    }
-                >
-                    Payment
-                </NavLink>
-                <NavLink
-                    to="/history"
-                    className={({ isActive }) =>
-                        `block py-3 px-6 rounded-lg transition text-lg font-medium ${isActive ? 'bg-gray-700 shadow-lg' : 'hover:bg-gray-700'
-                        }`
-                    }
-                >
-                    Order History
-                </NavLink>
-                <NavLink
-                    to="/manager"
-                    className={({ isActive }) =>
-                        `block py-3 px-6 rounded-lg transition text-lg font-medium ${isActive ? 'bg-gray-700 shadow-lg' : 'hover:bg-gray-700'
-                        }`
-                    }
-                >
-                    Manager
-                </NavLink>
-                <NavLink
-                    to="/settings"
-                    className={({ isActive }) =>
-                        `block py-3 px-6 rounded-lg transition text-lg font-medium ${isActive ? 'bg-gray-700 shadow-lg' : 'hover:bg-gray-700'
-                        }`
-                    }
-                >
-                    Settings
-                </NavLink>
+    const handleLogout = () => {
+        // Optional: clear auth token
+        navigate('/')
+    }
+
+    const menuItems = [
+        { to: '/dashboard', label: 'Dashboard' },
+        { to: '/tables', label: 'Table Layout' },
+        { to: '/orders', label: 'Order Entry' },
+        { to: '/summary', label: 'Order Summary' },
+        { to: '/payment', label: 'Payment' },
+        { to: '/history', label: 'Order History' },
+        { to: '/manager', label: 'Manager' },
+        { to: '/inventory', label: 'Inventory' },
+        { to: '/kitchen-status', label: 'Kitchen Status' },
+        { to: '/third-party', label: 'Third-Party' },
+        { to: '/settings', label: 'Settings' },
+    ]
+
+    return (
+        <div className="w-64 bg-gray-900 text-white min-h-screen fixed left-0 top-0 flex flex-col shadow-2xl">
+            {/* SMALL & ELEGANT LOGO */}
+            <div className="p-8 border-b border-gray-800">
+                <h1 className="text-xl font-bold text-center tracking-widest text-gray-300">
+                    Restro
+                    Sync
+                </h1>
+            </div>
+
+            {/* MENU ITEMS */}
+            <nav className="flex-1 px-6 py-8 space-y-2">
+                {menuItems.map((item) => (
+                    <NavLink
+                        key={item.to}
+                        to={item.to}
+                        className={({ isActive }) =>
+                            `block w-full text-left py-4 px-6 rounded-xl transition-all duration-200 text-base font-medium tracking-wide ${isActive
+                                ? 'bg-indigo-600 text-white shadow-lg transform scale-105'
+                                : 'hover:bg-gray-800 text-gray-300 hover:text-white'
+                            }`
+                        }
+                    >
+                        {item.label}
+                    </NavLink>
+                ))}
             </nav>
 
-            {/* Optional: Logout at bottom */}
-            <div className="mt-auto pt-8 border-t border-gray-700">
-                <button className="w-full py-3 px-6 text-left text-red-400 hover:bg-gray-800 rounded-lg transition text-lg font-medium">
+            {/* LOGOUT AT BOTTOM */}
+            <div className="p-6 border-t border-gray-800">
+                <button
+                    onClick={handleLogout}
+                    className="w-full py-4 px-6 bg-red-600 hover:bg-red-700 rounded-xl text-base font-medium transition-all duration-200 shadow-lg"
+                >
                     Logout
                 </button>
             </div>
