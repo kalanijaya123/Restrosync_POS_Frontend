@@ -1,32 +1,34 @@
-import React from 'react'
-import { useQuery } from '@tanstack/react-query'
-import api from '../services/api'
+import React, { useState, useEffect } from 'react'
 
 const Dashboard = () => {
-    const { data: stats } = useQuery({
-        queryKey: ['dashboard'],
-        queryFn: () => api.get('/dashboard/stats').then(res => res.data),
+    const [stats, setStats] = useState({
+        totalOrders: 0,
+        totalRevenue: 0,
+        activeTables: 0
     })
 
+    useEffect(() => {
+        fetch('http://localhost:8080/api/orders/dashboard/stats')
+            .then(r => r.ok ? r.json() : { totalOrders: 0, totalRevenue: 0, activeTables: 0 })
+            .then(data => setStats(data))
+            .catch(() => setStats({ totalOrders: 0, totalRevenue: 0, activeTables: 0 }))
+    }, [])
+
     return (
-        <div>
-            <h1 className="text-5xl font-bold mb-10  text-black">Dashboard</h1>
-            <div className="grid grid-cols-4 gap-8">
-                <div className="bg-white p-12 rounded-3xl shadow-2xl text-center">
-                    <p className="text-7xl font-bold text-green-600">${stats?.todaySales || 0}</p>
-                    <p className="text-2xl text-gray-600 mt-4">Today's Sales</p>
+        <div className="p-10">
+            <h1 className="text-4xl font-bold mb-8 text-black">Dashboard</h1>
+            <div className="grid grid-cols-3 gap-6">
+                <div className="bg-blue-600 text-white p-8 rounded-xl shadow-lg">
+                    <h3 className="text-xl">Total Orders</h3>
+                    <p className="text-4xl font-bold">{stats.totalOrders}</p>
                 </div>
-                <div className="bg-white p-12 rounded-3xl shadow-2xl text-center">
-                    <p className="text-7xl font-bold text-blue-600">{stats?.activeTables || 0}</p>
-                    <p className="text-2xl text-gray-600 mt-4">Active Tables</p>
+                <div className="bg-green-600 text-white p-8 rounded-xl shadow-lg">
+                    <h3 className="text-xl">Revenue</h3>
+                    <p className="text-4xl font-bold">${stats.totalRevenue.toFixed(2)}</p>
                 </div>
-                <div className="bg-white p-12 rounded-3xl shadow-2xl text-center">
-                    <p className="text-7xl font-bold text-orange-600">{stats?.pendingOrders || 0}</p>
-                    <p className="text-2xl text-gray-600 mt-4">Pending Orders</p>
-                </div>
-                <div className="bg-white p-12 rounded-3xl shadow-2xl text-center">
-                    <p className="text-7xl font-bold text-purple-600">${stats?.avgOrder || 0}</p>
-                    <p className="text-2xl text-gray-600 mt-4">Avg Order</p>
+                <div className="bg-orange-600 text-white p-8 rounded-xl shadow-lg">
+                    <h3 className="text-xl">Active Tables</h3>
+                    <p className="text-4xl font-bold">{stats.activeTables}</p>
                 </div>
             </div>
         </div>
