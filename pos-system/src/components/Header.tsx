@@ -1,12 +1,37 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { LogOut, User } from 'lucide-react'
 
 const Header = () => {
     const navigate = useNavigate()
-
-    // Get user from localStorage (set on login)
     const user = JSON.parse(localStorage.getItem('currentUser') || 'null')
     const userName = user?.name || 'Staff'
+    const role = user?.role || 'Waiter'
+
+    // Live Time & Date
+    const [time, setTime] = useState('')
+    const [date, setDate] = useState('')
+
+    useEffect(() => {
+        const updateClock = () => {
+            const now = new Date()
+            setTime(now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }))
+            setDate(now.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            }))
+        }
+
+        updateClock()
+        const interval = setInterval(updateClock, 1000)
+        return () => clearInterval(interval)
+    }, [])
 
     const handleLogout = () => {
         localStorage.removeItem('currentUser')
@@ -14,30 +39,50 @@ const Header = () => {
     }
 
     return (
-        <div className="fixed top-0 left-64 right-0 h-20 bg-white shadow-lg z-50 flex items-center justify-between px-10 border-b-4 border-indigo-600">
-            {/* Welcome Message */}
-            <div className="flex items-center gap-6">
-                <div className="text-3xl font-bold text-gray-800">
-                    Welcome, <span className="text-indigo-600">{userName}</span>
+        <div className="fixed top-0 left-64 right-0 h-20 bg-black/60 backdrop-blur-xl border-b border-purple-700/50 z-50 flex items-center justify-between px-8 shadow-2xl">
+
+            {/* LEFT: Welcome + Role */}
+            <div className="flex items-center gap-8">
+                <div>
+                    <h2 className="text-2xl font-bold text-white">
+                        Welcome back,{' '}
+                        <span className="bg-gradient-to-r from-pink-400 to-cyan-400 bg-clip-text text-transparent">
+                            {userName}
+                        </span>
+                    </h2>
+                    <p className="text-sm text-purple-300 font-medium tracking-wider">
+                        {role} • Active Session
+                    </p>
                 </div>
             </div>
 
-            {/* Profile + Logout */}
+            {/* CENTER: Live Clock & Date */}
+            <div className="text-center">
+                <div className="text-3xl font-bold text-cyan-300 tracking-wider">
+                    {time}
+                </div>
+                <div className="text-sm text-purple-300 font-medium mt-1">
+                    {date}
+                </div>
+            </div>
+
+            {/* RIGHT: Profile + Logout */}
             <div className="flex items-center gap-6">
-                {/* Profile Circle */}
-                <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-xl">
-                    {userName.charAt(0).toUpperCase()}
+                {/* Profile Avatar */}
+                <div className="relative group">
+                    <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-2xl ring-4 ring-purple-500/30">
+                        {userName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-400 to-pink-400 opacity-0 group-hover:opacity-50 blur-xl transition"></div>
                 </div>
 
                 {/* Logout Button */}
                 <button
                     onClick={handleLogout}
-                    className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-lg flex items-center gap-3"
+                    className="flex items-center gap-3 px- px-6 py-3.5 bg-gradient-to-r from-red-600 to-pink-700 hover:from-red-700 hover:to-pink-800 text-white font-bold rounded-xl shadow-xl transition-all transform hover:scale-105 active:scale-95"
                 >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Logout
+                    <LogOut className="w-5 h-5" />
+                    <span className="hidden md:block">Logout</span>
                 </button>
             </div>
         </div>

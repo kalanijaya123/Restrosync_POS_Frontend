@@ -202,10 +202,10 @@ const MenuManager = () => {
                                     <select
                                         value={form.category}
                                         onChange={e => setForm({ ...form, category: e.target.value })}
-                                        className="flex-1 px-5 py-4 rounded-xl bg-white/20 border border-white/30 text-white focus:border-cyan-400 text-lg"
+                                        className="flex-1 px-5 py-4 rounded-xl bg-white/20 border border-white/30 text-gray-900 bg-white/20 focus:border-cyan-400 text-lg"
                                     >
                                         {categories.map(cat => (
-                                            <option key={cat} value={cat}>{cat}</option>
+                                            <option key={cat} value={cat} style={{ color: '#111827' }}>{cat}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -217,7 +217,7 @@ const MenuManager = () => {
                                         value={newCategory}
                                         onChange={e => setNewCategory(e.target.value)}
                                         onKeyDown={e => e.key === 'Enter' && addNewCategory()}
-                                        className="flex-1 px-5 py-4 rounded-xl bg-white/20 border border-white/30 placeholder-gray-400 focus:border-pink-500 focus:outline-none text-lg"
+                                        className="flex-1 px-5 py-4 rounded-xl bg-white/20 border border-white/30 placeholder-gray-400 focus:border-pink-500 focus:outline-none text-lg text-gray-900"
                                     />
                                     <button
                                         onClick={addNewCategory}
