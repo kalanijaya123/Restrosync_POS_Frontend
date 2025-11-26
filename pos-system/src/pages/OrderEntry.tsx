@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react'
+import toast, { Toaster } from 'react-hot-toast'
+import { Plus, Minus, ShoppingCart, Search } from 'lucide-react'
 
+interface Size { name: string; price: number }
 interface MenuItem {
     id: string
     name: string
-    price: number
     category: string
+    price?: number
+    sizes?: Size[]
+    imageUrl?: string
 }
 
 interface CartItem {
-    item: MenuItem
+    menuItemId: string
+    name: string
+    sizeName: string
+    price: number
     qty: number
 }
 
@@ -16,194 +24,260 @@ const OrderEntry = () => {
     const [menu, setMenu] = useState<MenuItem[]>([])
     const [cart, setCart] = useState<CartItem[]>([])
     const [selectedCategory, setSelectedCategory] = useState('All')
+    const [searchQuery, setSearchQuery] = useState('')
+    const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        fetch('http://localhost:8080/api/menu')
-            .then(r => r.ok ? r.json() : [])
-            .then(data => setMenu(Array.isArray(data) ? data : []))
-    }, [])
+    useEffect(() => { fetchMenu() }, [])
+
+    const fetchMenu = async () => {
+        try {
+            const res = await fetch('http://localhost:8080/api/menu')
+            if (!res.ok) throw new Error()
+            const data = await res.json()
+            setMenu(Array.isArray(data) ? data : [])
+        } catch {
+            toast.error('Failed to load menu')
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const categories = ['All', ...Array.from(new Set(menu.map(m => m.category)))]
 
-    const filteredMenu = selectedCategory === 'All'
-        ? menu
-        : menu.filter(m => m.category === selectedCategory)
+    // FILTER BY CATEGORY + SEARCH
+    const filteredMenu = menu
+        .filter(item => selectedCategory === 'All' || item.category === selectedCategory)
+        .filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
 
-    const addToCart = (item: MenuItem) => {
+    const addToCart = (item: MenuItem, size: Size) => {
+        const newItem: CartItem = {
+            menuItemId: item.id,
+            name: item.name,
+            sizeName: size.name,
+            price: size.price,
+            qty: 1
+        }
+
         setCart(prev => {
-            const existing = prev.find(c => c.item.id === item.id)
-            if (existing) {
+            const exists = prev.find(c => c.menuItemId === newItem.menuItemId && c.sizeName === newItem.sizeName)
+            if (exists) {
                 return prev.map(c =>
-                    c.item.id === item.id ? { ...c, qty: c.qty + 1 } : c
+                    c.menuItemId === newItem.menuItemId && c.sizeName === newItem.sizeName
+                        ? { ...c, qty: c.qty + 1 } : c
                 )
             }
-            return [...prev, { item, qty: 1 }]
+            return [...prev, newItem]
+        })
+
+        toast.success(`${size.name} ${item.name}`, {
+            icon: 'Added',
+            style: { background: '#1e1b4b', color: '#fff', borderRadius: '12px' }
         })
     }
 
-    const increment = (itemId: string) => {
-        setCart(prev => prev.map(c => c.item.id === itemId ? { ...c, qty: c.qty + 1 } : c))
+    const updateQty = (index: number, change: number) => {
+        setCart(prev => {
+            const updated = [...prev]
+            updated[index].qty += change
+            return updated[index].qty > 0 ? updated : updated.filter((_, i) => i !== index)
+        })
     }
 
-    const decrement = (itemId: string) => {
-        setCart(prev => prev.flatMap(c => {
-            if (c.item.id !== itemId) return c
-            if (c.qty > 1) return { ...c, qty: c.qty - 1 }
-            return [] // remove when qty would go to 0
-        }))
-    }
+    const total = cart.reduce((sum, c) => sum + c.price * c.qty, 0).toFixed(2)
 
-    const removeItem = (itemId: string) => {
-        setCart(prev => prev.filter(c => c.item.id !== itemId))
-    }
-
-    const total = cart.reduce((sum, c) => sum + c.item.price * c.qty, 0)
-
-    // Send current cart to backend kitchen/orders endpoint
     const sendToKitchen = async () => {
-        if (cart.length === 0) {
-            alert('Cart is empty')
-            return
-        }
+        if (cart.length === 0) return toast.error('Cart is empty')
 
-        // Build payloads. Try compact first (ids + qty), then verbose if that fails.
-        const compactPayload = {
-            tableId: 1,
-            items: cart.map(c => ({ menuItemId: c.item.id, name: c.item.name, price: c.item.price, qty: c.qty })),
-            total
-        }
-
-        const verbosePayload = {
-            tableId: 1,
-            items: cart.map(c => ({ id: c.item.id, name: c.item.name, price: c.item.price, qty: c.qty })),
-            total,
-            createdAt: new Date().toISOString()
-        }
-
-        const token = localStorage.getItem('authToken')
-
-        const post = async (body: object) => {
-            const headers: Record<string, string> = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-            if (token) headers['Authorization'] = `Bearer ${token}`
-
-            const res = await fetch('http://localhost:8080/api/orders', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(body)
-            })
-            return res
+        const payload = {
+            tableId: "1",
+            items: cart.map(c => ({
+                menuItemId: c.menuItemId,
+                name: `${c.name} (${c.sizeName})`,
+                price: c.price,
+                qty: c.qty
+            })),
+            total: Number(total)
         }
 
         try {
-            console.log('Sending compact payload to /api/orders', compactPayload)
-            let res = await post(compactPayload)
-
-            // If compact was rejected, try verbose payload as a fallback
-            if (!res.ok) {
-                const text = await res.text()
-                console.warn('Compact payload rejected:', res.status, text)
-                console.log('Attempting verbose payload...')
-                res = await post(verbosePayload)
-            }
-
-            // Read response body (try JSON then text)
-            const contentType = res.headers.get('content-type') || ''
-            const bodyText = contentType.includes('application/json') ? await res.json().catch(() => null) : await res.text().catch(() => null)
-
-            if (!res.ok) {
-                console.error('Order API returned error', res.status, bodyText)
-                // If server included useful JSON, show it
-                const serverMsg = typeof bodyText === 'object' ? JSON.stringify(bodyText) : String(bodyText)
-                throw new Error(serverMsg || `HTTP ${res.status}`)
-            }
-
-            // success
+            const res = await fetch('http://localhost:8080/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            if (!res.ok) throw new Error(await res.text())
+            toast.success('Order sent to kitchen!', { icon: 'Sent' })
             setCart([])
-            alert('Order sent to kitchen')
         } catch (err: any) {
-            console.error('Failed to send order', err)
-            const message = err.message || String(err)
-            alert('Failed to send order to kitchen: ' + message)
+            toast.error('Failed: ' + err.message)
         }
     }
 
     return (
-        <div className="flex h-screen">
-            {/* LEFT: MENU */}
-            <div className="w-3/4 bg-gray-50 p-8 overflow-y-auto">
-                <h1 className="text-5xl font-bold mb-8 text-black"> Add Order</h1>
+        <>
+            <Toaster position="top-center" toastOptions={{ duration: 2000 }} />
 
-                {/* CATEGORY TABS */}
-                <div className="flex gap-4 mb-8 flex-wrap">
-                    {categories.map(cat => (
-                        <button
-                            key={cat}
-                            onClick={() => setSelectedCategory(cat)}
-                            className={`px-8 py-4 rounded-xl text-xl font-bold transition ${selectedCategory === cat
-                                ? 'bg-teal-600 text-white shadow-lg'
-                                : 'bg-white hover:bg-gray-200'
-                                }`}
-                        >
-                            {cat}
-                        </button>
-                    ))}
-                </div>
+            <div className="min-h-screen bg-gradient-to-br from-purple-950 via-indigo-950 to-black text-white">
 
-                {/* MENU GRID */}
-                <div className="grid grid-cols-4 gap-6">
-                    {filteredMenu.map(item => (
-                        <button
-                            key={item.id}
-                            onClick={() => addToCart(item)}
-                            className="bg-teal-600 p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all text-left"
-                        >
-                            <h3 className="text-2xl font-bold text-white">{item.name}</h3>
-                            <p className="text-3xl font-bold text-amber-100 mt-4">${item.price}</p>
-                        </button>
-                    ))}
-                </div>
-            </div>
+                <div className="flex h-screen">
 
-            {/* RIGHT: CART */}
-            <div className="w-1/4 bg-white shadow-2xl p-8 flex flex-col">
-                <h2 className="text-4xl font-bold mb-6 text-teal-700">Order Summary</h2>
-                <div className="flex-1 overflow-y-auto">
-                    {cart.length === 0 ? (
-                        <p className="text-center text-gray-500 text-xl mt-20">No items yet</p>
-                    ) : (
-                        cart.map((c) => (
-                            <div key={c.item.id} className="flex justify-between py-4 border-b text-xl items-center">
-                                <div>
-                                    <div className="text-gray-800">{c.qty} × <span className="font-medium">{c.item.name}</span></div>
-                                    <div className="mt-2 flex items-center gap-2">
-                                        <button onClick={() => decrement(c.item.id)} className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200">-</button>
-                                        <button onClick={() => increment(c.item.id)} className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200">+</button>
-                                        <button onClick={() => removeItem(c.item.id)} className="px-3 py-1 bg-red-100 text-red-600 rounded-md hover:bg-red-200">Delete</button>
-                                    </div>
-                                </div>
-                                <span className="font-semibold text-amber-600">${(c.item.price * c.qty).toFixed(2)}</span>
+                    {/* LEFT: MENU */}
+                    <div className="w-3/4 p-6 overflow-y-auto">
+                        <h1 className="text-5xl font-extrabold text-center mb-6 bg-gradient-to-r from-pink-400 to-cyan-400 bg-clip-text text-transparent">
+                            Take Order
+                        </h1>
+
+                        {/* SEARCH BAR */}
+                        <div className="max-w-2xl mx-auto mb-6">
+                            <div className="relative">
+                                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                <input
+                                    type="text"
+                                    placeholder="Search food items..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-12 pr-6 py-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl text-lg focus:outline-none focus:border-pink-500/50 transition placeholder-gray-400"
+                                />
                             </div>
-                        ))
-                    )}
-                </div>
-                <div className="border-t-4 border-teal-600 pt-6">
-                    <div className="flex justify-between text-4xl font-bold mb-8">
-                        <span>Total</span>
-                        <span className="text-teal-700">${total.toFixed(2)}</span>
+                        </div>
+
+                        {/* Category Pills */}
+                        <div className="flex gap-3 mb-8 flex-wrap justify-center">
+                            {categories.map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className={`px-6 py-3 rounded-full font-semibold transition-all transform hover:scale-105 ${selectedCategory === cat
+                                        ? 'bg-gradient-to-r from-pink-500 to-purple-600 shadow-xl shadow-purple-500/50'
+                                        : 'bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20'
+                                        }`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* SMALLER, COMPACT MENU CARDS */}
+                        {loading ? (
+                            <div className="flex justify-center py-32">
+                                <div className="animate-spin rounded-full h-16 w-16 border-4 border-pink-500 border-t-transparent"></div>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-4 gap-5 max-w-7xl mx-auto">
+                                {filteredMenu.length === 0 ? (
+                                    <div className="col-span-4 text-center py-20 text-gray-400">
+                                        <p className="text-2xl">No items found</p>
+                                    </div>
+                                ) : (
+                                    filteredMenu.map(item => {
+                                        const sizes = item.sizes && item.sizes.length > 0
+                                            ? item.sizes
+                                            : [{ name: 'Regular', price: item.price || 0 }]
+
+                                        return (
+                                            <div
+                                                key={item.id}
+                                                className="bg-white/5 backdrop-blur-xl rounded-xl overflow-hidden border border-white/10 hover:border-purple-500/50 transition-all hover:shadow-xl hover:shadow-purple-500/20 hover:scale-105"
+                                            >
+                                                {/* Image */}
+                                                {item.imageUrl ? (
+                                                    <img src={item.imageUrl} alt={item.name} className="w-full h-32 object-cover" />
+                                                ) : (
+                                                    <div className="h-32 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+                                                        <span className="text-4xl font-bold opacity-60">{item.name[0]}</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Content */}
+                                                <div className="p-4">
+                                                    <h3 className="font-bold text-sm text-cyan-300 mb-3 line-clamp-2">{item.name}</h3>
+
+                                                    <div className="space-y-2">
+                                                        {sizes.map((size, i) => (
+                                                            <button
+                                                                key={i}
+                                                                onClick={() => addToCart(item, size)}
+                                                                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs font-bold py-2.5 rounded-lg transition-all flex justify-between items-center px-3 shadow-md"
+                                                            >
+                                                                <span>{size.name}</span>
+                                                                <span>Rs {size.price.toFixed(0)}</span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })
+                                )}
+                            </div>
+                        )}
                     </div>
-                    <button
-                        onClick={sendToKitchen}
-                        disabled={cart.length === 0}
-                        className={`w-full py-8 rounded-2xl text-3xl font-bold shadow-2xl transition ${cart.length === 0 ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 text-white'}`}
-                    >
-                        SEND TO KITCHEN
-                    </button>
+
+                    {/* RIGHT: CART */}
+                    <div className="w-1/4 bg-black/40 backdrop-blur-2xl border-l border-purple-500/30 p-6 flex flex-col">
+                        <div className="flex items-center gap-3 mb-6">
+                            <ShoppingCart className="w-9 h-9 text-pink-400" />
+                            <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+                                Order Cart ({cart.length})
+                            </h2>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto mb-6 space-y-3">
+                            {cart.length === 0 ? (
+                                <div className="text-center py-20 text-gray-500">
+                                    <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                                    <p className="text-lg">Cart is empty</p>
+                                </div>
+                            ) : (
+                                cart.map((c, i) => (
+                                    <div key={i} className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+                                        <div className="flex justify-between mb-2">
+                                            <div>
+                                                <div className="font-medium text-sm">{c.name}</div>
+                                                <div className="text-xs text-pink-300">{c.sizeName}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="font-bold text-green-400">
+                                                    Rs {(c.price * c.qty).toFixed(0)}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-3">
+                                            <button onClick={() => updateQty(i, -1)} className="w-8 h-8 bg-red-600/80 hover:bg-red-600 rounded-full flex items-center justify-center">
+                                                <Minus className="w-4 h-4" />
+                                            </button>
+                                            <span className="font-bold text-lg w-10 text-center">{c.qty}</span>
+                                            <button onClick={() => updateQty(i, 1)} className="w-8 h-8 bg-green-600/80 hover:bg-green-600 rounded-full flex items-center justify-center">
+                                                <Plus className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="border-t border-purple-500/50 pt-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <span className="text-xl font-bold">Total</span>
+                                <span className="text-3xl font-extrabold text-green-400">Rs {total}</span>
+                            </div>
+
+                            <button
+                                onClick={sendToKitchen}
+                                disabled={cart.length === 0}
+                                className={`w-full py-5 rounded-xl font-bold text-xl transition-all transform hover:scale-105 shadow-2xl ${cart.length === 0
+                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-pink-600 to-purple-700 hover:from-pink-700 hover:to-purple-800 text-white shadow-pink-500/50'
+                                    }`}
+                            >
+                                SEND TO KITCHEN
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     )
 }
 

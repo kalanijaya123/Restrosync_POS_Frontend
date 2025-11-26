@@ -13,6 +13,7 @@ const Sidebar = () => {
         { to: '/inventory', label: 'Inventory' },
         { to: '/status', label: 'Kitchen Status' },
         { to: '/third-party', label: 'Third-Party' },
+        { to: '/menu-manager', label: 'Menu' },
         { to: '/settings', label: 'Settings' },
     ]
 
