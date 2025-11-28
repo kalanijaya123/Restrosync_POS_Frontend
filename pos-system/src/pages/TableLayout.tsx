@@ -9,7 +9,7 @@ interface Table {
     id: string
     number: string
     chairs: number
-    status: 'available' | 'reserved'
+    status: 'available' | 'occupied'
     currentOrderId?: string | null
     x: number
     y: number
@@ -45,8 +45,7 @@ const TableLayout = () => {
     const reserveTable = useMutation({
         mutationFn: (tableId: string) =>
             api.put(`/tables/${tableId}/occupy`, { orderId: 'pending' }),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tables'] }),
-        onError: (err: any) => toast.error('Failed to reserve: ' + err.message)
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tables'] })
     })
 
     const clearTable = useMutation({
@@ -85,7 +84,7 @@ const TableLayout = () => {
     }
 
     const handleTableClick = async (table: Table) => {
-        if (table.status === 'reserved') {
+        if (table.status === 'occupied') {
             if (confirm(`Free Table ${table.number}?`)) {
                 clearTable.mutate(table.id)
             }
@@ -189,12 +188,12 @@ const TableLayout = () => {
                             <div
                                 onClick={() => handleTableClick(table)}
                                 className={`relative w-40 h-40 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all transform hover:scale-110 cursor-pointer
-                                    ${table.status === 'reserved'
+                                    ${table.status === 'occupied'
                                         ? 'bg-gradient-to-br from-red-600 to-pink-700 border-8 border-red-500/70'
                                         : 'bg-gradient-to-br from-emerald-600 to-cyan-600 border-8 border-emerald-500/70'
                                     }`}
                             >
-                                {table.status === 'reserved' ? (
+                                {table.status === 'occupied' ? (
                                     <Lock className="absolute top-4 right-4 w-9 h-9 text-white/90" />
                                 ) : (
                                     <Unlock className="absolute top-4 right-4 w-7 h-7 text-white/60 opacity-0 group-hover:opacity-100 transition" />
@@ -209,7 +208,7 @@ const TableLayout = () => {
                                     <span className="text-2xl font-bold">{table.chairs}</span>
                                 </div>
                                 <p className="text-sm font-semibold mt-2">
-                                    {table.status === 'reserved' ? 'RESERVED' : 'FREE'}
+                                    {table.status === 'occupied' ? 'RESERVED' : 'FREE'}
                                 </p>
 
                                 <div

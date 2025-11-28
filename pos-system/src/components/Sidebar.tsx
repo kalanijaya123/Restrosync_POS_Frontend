@@ -1,19 +1,17 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import {
-    LayoutDashboard, Table, ShoppingCart, Receipt,
-    CreditCard, History, Users, Package, ChefHat,
+    Table, ShoppingCart, Receipt,
+    CreditCard, Users, Package, ChefHat,
     Globe, Utensils, Settings
 } from 'lucide-react'
 
 const Sidebar = () => {
     const menuItems = [
-        { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/tables', label: 'Table Layout', icon: Table },
         { to: '/orders', label: 'Order Entry', icon: ShoppingCart },
         { to: '/summary', label: 'Order Summary', icon: Receipt },
         { to: '/payment', label: 'Payment', icon: CreditCard },
-        { to: '/history', label: 'Order History', icon: History },
         { to: '/manager', label: 'Manager', icon: Users },
         { to: '/inventory', label: 'Inventory', icon: Package },
         { to: '/status', label: 'Kitchen Status', icon: ChefHat },
