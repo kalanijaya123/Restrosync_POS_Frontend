@@ -108,7 +108,7 @@ const OrderEntry = () => {
                 qty: c.qty
             })),
             total: Math.round(total),
-            tableId: tableId || null,
+            tableNumber: tableId ? tableId.slice(-4) : null,
             source: tableId ? 'dine-in' : 'takeaway'
         }
 

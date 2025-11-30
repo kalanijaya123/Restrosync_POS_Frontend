@@ -13,7 +13,7 @@ interface Order {
     id: string
     items: OrderItem[]
     total: number
-    tableId?: string
+    tableId?:string | null
     tableNumber?: string
     createdAt: string
     status: string
@@ -32,21 +32,43 @@ const OrderSummary = () => {
     }, [])
 
     const fetchAllOrders = async () => {
-        try {
-            const res = await fetch('http://localhost:8080/api/orders')
-            if (!res.ok) throw new Error('Failed to load orders')
-            const data = await res.json()
-            const sorted = (data || []).sort((a: any, b: any) =>
-                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-            )
-            setOrders(sorted)
-            setFilteredOrders(sorted)
-        } catch (err) {
-            toast.error('Failed to load orders')
-        } finally {
-            setLoading(false)
-        }
+    try {
+        const res = await fetch('http://localhost:8080/api/orders')
+        if (!res.ok) throw new Error('Failed to load orders')
+        const data = await res.json()
+
+        // THIS IS THE MAGIC FIX – CONVERT ARRAY TO REAL DATE
+        const parsedOrders = (data || []).map((order: any) => ({
+            ...order,
+            createdAt: Array.isArray(order.createdAt)
+                ? new Date(
+                    order.createdAt[0], // year
+                    order.createdAt[1] - 1, // month (0-based!)
+                    order.createdAt[2], // day
+                    order.createdAt[3] || 0,
+                    order.createdAt[4] || 0,
+                    order.createdAt[5] || 0
+                  ).toISOString()
+                : order.createdAt,
+            items: order.items.map((item: any) => ({
+                name: item.name,
+                qty: item.qty,
+                price: item.price
+            }))
+        }))
+
+        const sorted = parsedOrders.sort((a: any, b: any) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+
+        setOrders(sorted)
+        setFilteredOrders(sorted)
+    } catch (err) {
+        toast.error('Failed to load orders')
+    } finally {
+        setLoading(false)
     }
+}
 
     const getDaysInMonth = (): Date[] => {
         const start = startOfMonth(currentMonth)
