@@ -49,12 +49,12 @@ const KitchenStatus = () => {
     const formatTable = (o: Order) => o.table || o.tableId || 'Takeaway'
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white p-6">
+        <div className="min-h-screen bg-gray-900 text-white p-6">
             {/* HEADER — Clean & Professional */}
             <header className="text-center mb-10">
                 <div className="flex items-center justify-center gap-4 mb-3">
                     <ChefHat className="w-10 h-10 text-yellow-400" />
-                    <h1 className="text-5xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                    <h1 className="text-5xl font-bold text-white">
                         Kitchen Status (Live)
                     </h1>
                     <ChefHat className="w-10 h-10 text-yellow-400" />
@@ -121,9 +121,9 @@ const KitchenStatus = () => {
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 transition={{ delay: i * 0.05 }}
                                 className={`rounded-2xl p-6 shadow-xl border-2
-                  ${order.status === 'pending' ? 'bg-gradient-to-br from-red-600/80 to-pink-700/80 border-red-500' :
-                                        order.status === 'preparing' ? 'bg-gradient-to-br from-amber-600/80 to-orange-700/80 border-amber-500' :
-                                            'bg-gradient-to-br from-emerald-600/80 to-teal-700/80 border-emerald-500'
+                  ${order.status === 'pending' ? 'bg-red-600 border-red-500' :
+                                        order.status === 'preparing' ? 'bg-amber-600 border-amber-500' :
+                                            'bg-emerald-600 border-emerald-500'
                                     }`}
                             >
                                 <div className="flex justify-between items-start mb-4">

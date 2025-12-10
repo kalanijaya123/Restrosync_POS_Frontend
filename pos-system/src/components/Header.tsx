@@ -39,14 +39,14 @@ const Header = () => {
     }
 
     return (
-        <div className="fixed top-0 left-64 right-0 h-20 bg-black/60 backdrop-blur-xl border-b border-purple-700/50 z-50 flex items-center justify-between px-8 shadow-2xl">
+        <div className="fixed top-0 left-64 right-0 h-20 bg-black/60 backdrop-blur-xl border-b border-brand z-50 flex items-center justify-between px-8 shadow-2xl">
 
             {/* LEFT: Welcome + Role */}
             <div className="flex items-center gap-8">
                 <div>
                     <h2 className="text-2xl font-bold text-white">
                         Welcome back,{' '}
-                        <span className="bg-gradient-to-r from-pink-400 to-cyan-400 bg-clip-text text-transparent">
+                        <span className="text-cyan-300">
                             {userName}
                         </span>
                     </h2>
@@ -70,16 +70,16 @@ const Header = () => {
             <div className="flex items-center gap-6">
                 {/* Profile Avatar */}
                 <div className="relative group">
-                    <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-2xl ring-4 ring-purple-500/30">
+                    <div className="w-14 h-14 bg-brand rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-2xl ring-4 ring-brand">
                         {userName.charAt(0).toUpperCase()}
                     </div>
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-400 to-pink-400 opacity-0 group-hover:opacity-50 blur-xl transition"></div>
+                    <div className="absolute inset-0 rounded-full bg-brand-opaque opacity-0 group-hover:opacity-50 blur-xl transition"></div>
                 </div>
 
                 {/* Logout Button */}
                 <button
                     onClick={handleLogout}
-                    className="flex items-center gap-3 px- px-6 py-3.5 bg-gradient-to-r from-red-600 to-pink-700 hover:from-red-700 hover:to-pink-800 text-white font-bold rounded-xl shadow-xl transition-all transform hover:scale-105 active:scale-95"
+                    className="flex items-center gap-3 px-6 py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-xl transition-all transform hover:scale-105 active:scale-95"
                 >
                     <LogOut className="w-5 h-5" />
                     <span className="hidden md:block">Logout</span>

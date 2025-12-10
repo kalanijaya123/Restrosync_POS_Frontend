@@ -206,7 +206,7 @@ const OrderEntry = () => {
             {/* CUSTOMER MODAL */}
             {showCustomerModal && (
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-6">
-                    <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-10 max-w-lg w-full border-2 border-cyan-500 shadow-2xl">
+                    <div className="bg-brand rounded-3xl p-10 max-w-lg w-full border-2 border-cyan-500 shadow-2xl">
                         <div className="flex justify-between items-center mb-8">
                             <h2 className="text-4xl font-bold text-cyan-400 flex items-center gap-4">
                                 <User className="w-12 h-12" /> Customer Info
@@ -246,7 +246,7 @@ const OrderEntry = () => {
 
                         <div className="flex gap-4 mt-10">
                             <button onClick={() => setShowCustomerModal(false)} className="flex-1 py-5 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold text-xl">Cancel</button>
-                            <button onClick={confirmOrder} className="flex-1 py-5 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-xl font-bold text-xl shadow-xl">
+                            <button onClick={confirmOrder} className="flex-1 py-5 bg-brand rounded-xl font-bold text-xl shadow-xl">
                                 Confirm & Send
                             </button>
                         </div>
@@ -257,7 +257,7 @@ const OrderEntry = () => {
             {/* EXTRAS MODAL */}
             {showExtrasModal && currentItemForExtras && (
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-40 flex items-center justify-center p-6">
-                    <div className="bg-gradient-to-br from-purple-900 to-black rounded-3xl p-8 max-w-lg w-full border border-purple-600 shadow-2xl">
+                    <div className="bg-brand rounded-3xl p-8 max-w-lg w-full border border-brand shadow-2xl">
                         <h2 className="text-4xl font-bold text-cyan-400 text-center mb-6">
                             {currentItemForExtras.item.name} ({currentItemForExtras.size.name})
                         </h2>
@@ -287,7 +287,7 @@ const OrderEntry = () => {
 
                         <div className="flex gap-4 mt-8">
                             <button onClick={() => setShowExtrasModal(false)} className="flex-1 py-5 bg-gray-700 rounded-xl font-bold text-xl">Cancel</button>
-                            <button onClick={confirmAddToCart} className="flex-1 py-5 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-xl font-bold text-xl">
+                            <button onClick={confirmAddToCart} className="flex-1 py-5 bg-brand rounded-xl font-bold text-xl">
                                 Add • Rs {currentItemForExtras.size.price + selectedExtras.reduce((s, e) => s + e.price * e.qty, 0)}
                             </button>
                         </div>
@@ -296,17 +296,17 @@ const OrderEntry = () => {
             )}
 
             {/* MAIN PAGE */}
-            <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-black text-white flex">
+            <div className="min-h-screen bg-black text-white flex">
                 <div className="flex-1 p-8 overflow-y-auto">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex justify-between items-center mb-8">
                             <button onClick={() => navigate('/tables')} className="flex items-center gap-3 px-6 py-4 bg-white/10 rounded-xl">
                                 <ArrowLeft /> Back
                             </button>
-                            {tableId && <div className="bg-gradient-to-r from-orange-600 to-red-600 px-12 py-6 rounded-3xl text-5xl font-bold">T{tableId.slice(-4)}</div>}
+                            {tableId && <div className="bg-brand px-12 py-6 rounded-3xl text-5xl font-bold text-white">T{tableId.slice(-4)}</div>}
                         </div>
 
-                        <h1 className="text-4xl font-extrabold text-center mb-6 bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">Take Order</h1>
+                        <h1 className="text-4xl font-extrabold text-center mb-6 text-white">Take Order</h1>
 
                         <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                             className="w-full max-w-2xl mx-auto block px-4 py-3 rounded-2xl bg-white/10 text-lg mb-6" />
@@ -314,7 +314,7 @@ const OrderEntry = () => {
                         <div className="flex gap-4 flex-wrap justify-center mb-12">
                             {categories.map(cat => (
                                 <button key={cat} onClick={() => setSelectedCategory(cat)}
-                                    className={`px-4 py-2 rounded-full text-base font-semibold ${selectedCategory === cat ? 'bg-gradient-to-r from-cyan-600 to-purple-600' : 'bg-white/10'}`}>
+                                    className={`px-4 py-2 rounded-full text-base font-semibold ${selectedCategory === cat ? 'bg-brand text-white' : 'bg-white/10'}`}>
                                     {cat}
                                 </button>
                             ))}
@@ -324,7 +324,7 @@ const OrderEntry = () => {
                             {filteredMenu.map(item => (
                                 <div key={item.id} className="bg-white/10 rounded-2xl overflow-hidden border border-purple-600 hover:border-cyan-500 hover:scale-105 transition shadow-md">
                                     {item.mediaUrl ? <img src={item.mediaUrl} alt={item.name} className="w-full h-48 object-cover" /> :
-                                        <div className="h-48 bg-gradient-to-br from-purple-800 to-pink-800 flex items-center justify-center">
+                                        <div className="h-48 bg-brand-opaque flex items-center justify-center">
                                             <Package className="w-20 h-20 text-white/30" />
                                         </div>
                                     }
@@ -334,7 +334,7 @@ const OrderEntry = () => {
                                             {(item.sizes || []).map(size => (
                                                 <button key={size.name}
                                                     onClick={() => (item.extras && item.extras.length > 0) ? openExtras(item, size) : addToCartDirect(item, size)}
-                                                    className="w-full py-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 rounded-lg font-semibold text-lg flex justify-between px-4 shadow-sm">
+                                                    className="w-full py-2 bg-brand rounded-lg font-semibold text-lg flex justify-between px-4 shadow-sm">
                                                     <span>{size.name}</span>
                                                     <span>Rs {size.price}</span>
                                                 </button>
@@ -349,7 +349,7 @@ const OrderEntry = () => {
                 </div>
 
                 {/* CART */}
-                <div className="w-80 bg-black/90 border-l border-purple-600 p-6 flex flex-col">
+                <div className="w-80 bg-black/90 border-l border-brand p-6 flex flex-col">
                     <div className="flex items-center gap-4 mb-8">
                         <ShoppingCart className="w-10 h-10 text-cyan-400" />
                         <h2 className="text-2xl font-bold">Cart ({cart.reduce((s, i) => s + i.qty, 0)})</h2>
@@ -358,7 +358,7 @@ const OrderEntry = () => {
                     <div className="flex-1 overflow-y-auto space-y-4">
                         {cart.length === 0 ? <p className="text-center text-gray-500 text-xl py-20">Empty</p> :
                             cart.map((item, i) => (
-                                <div key={i} className="bg-white/10 rounded-2xl p-4 border border-purple-600">
+                                <div key={i} className="bg-white/10 rounded-2xl p-4 border border-brand">
                                     <div className="flex justify-between mb-3">
                                         <div>
                                             <p className="text-lg font-semibold">{item.name}</p>
@@ -376,13 +376,13 @@ const OrderEntry = () => {
                             ))}
                     </div>
 
-                    <div className="border-t border-purple-600 pt-4 mt-4">
+                    <div className="border-t border-brand pt-4 mt-4">
                         <div className="flex justify-between mb-4">
                             <span className="text-lg font-bold">Total</span>
                             <span className="text-2xl font-extrabold text-green-400">Rs {total}</span>
                         </div>
                         <button onClick={sendToKitchen} disabled={cart.length === 0}
-                            className="w-full py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 rounded-xl font-semibold text-base shadow-md disabled:opacity-50">
+                            className="w-full py-3 bg-brand rounded-xl font-semibold text-base shadow-md disabled:opacity-50">
                             SEND TO KITCHEN
                         </button>
                     </div>

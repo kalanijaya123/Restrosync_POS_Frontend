@@ -211,9 +211,9 @@ const MenuManager = () => {
     return (
         <>
             <Toaster position="top-center" />
-            <div className="min-h-screen bg-gradient-to-br from-purple-950 via-indigo-950 to-black text-white p-8">
+            <div className="min-h-screen bg-black text-white p-8">
                 <div className="text-center mb-12">
-                    <h1 className="text-7xl font-black font-extrabold bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 bg-clip-text text-transparent">
+                    <h1 className="text-7xl font-black font-extrabold text-brand">
                         PRO MENU MANAGER
                     </h1>
                     <p className="text-3xl mt-4 text-gray-300">Recipe • Extras • Sizes • Image • Inventory Sync</p>
@@ -223,7 +223,7 @@ const MenuManager = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="max-w-7xl mx-auto bg-white/10 backdrop-blur-3xl rounded-3xl p-10 shadow-4xl border border-purple-500/50"
+                    className="max-w-7xl mx-auto bg-white/10 backdrop-blur-3xl rounded-3xl p-10 shadow-4xl border border-brand"
                 >
                     <div className="grid lg:grid-cols-2 gap-12">
                         {/* LEFT */}
@@ -399,12 +399,12 @@ const MenuManager = () => {
                         {/* RIGHT - IMAGE */}
                         <div className="flex flex-col items-center">
                             <label className="cursor-pointer w-full">
-                                <div className="border-4 border-dashed border-purple-500 rounded-3xl h-96 flex items-center justify-center bg-white/5 hover:bg-white/10 transition">
+                                <div className="border-4 border-dashed border-brand rounded-3xl h-96 flex items-center justify-center bg-white/5 hover:bg-white/10 transition">
                                     {previewUrl ? (
                                         <img src={previewUrl} alt="Preview" className="max-h-full rounded-2xl" />
                                     ) : (
                                         <div className="text-center">
-                                            <Camera className="w-28 h-28 text-purple-400 mb-4" />
+                                            <Camera className="w-28 h-28 text-brand mb-4" />
                                             <p className="text-xl text-gray-400">Click to upload image</p>
                                         </div>
                                     )}
@@ -429,7 +429,7 @@ const MenuManager = () => {
                         <button
                             onClick={handleSubmit}
                             disabled={uploading}
-                            className="px-32 py-8 text-5xl font-extrabold bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-600 hover:to-cyan-700 rounded-full shadow-2xl transform hover:scale-105 disabled:opacity-60"
+                            className="px-32 py-8 text-5xl font-extrabold bg-brand text-white rounded-full shadow-2xl transform hover:scale-105 disabled:opacity-60"
                         >
                             {uploading ? 'SAVING...' : 'ADD MENU ITEM'}
                         </button>

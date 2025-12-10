@@ -78,3 +78,30 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Brand color utilities (project-wide) */
+:root {
+  --brand-purple: #9D4EDD;
+}
+
+/* Use .text-brand for text and .bg-brand for solid backgrounds replacing gradients */
+.text-brand {
+  color: var(--brand-purple) !important;
+}
+
+.bg-brand {
+  background-color: var(--brand-purple) !important;
+}
+
+.border-brand {
+  border-color: var(--brand-purple) !important;
+}
+
+.ring-brand {
+  box-shadow: 0 0 0 4px rgba(157, 78, 221, 0.12);
+}
+
+/* Utility for semi-opaque brand backgrounds */
+.bg-brand-opaque {
+  background-color: rgba(157, 78, 221, 0.12) !important;
+}

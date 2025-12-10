@@ -11,17 +11,17 @@ const ManagerDashboard = () => {
 
     return (
         <div>
-            <h1 className="text-5xl font-bold mb-10 text-black">Manager Dashboard</h1>
+            <h1 className="text-5xl font-bold mb-10 text-brand">Manager Dashboard</h1>
             <div className="grid grid-cols-3 gap-10">
-                <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-12 rounded-3xl shadow-2xl text-white">
+                <div className="p-12 rounded-3xl shadow-2xl text-white bg-brand">
                     <p className="text-3xl">Total Sales</p>
                     <p className="text-7xl font-bold mt-6">${stats.sales}</p>
                 </div>
-                <div className="bg-gradient-to-br from-green-600 to-teal-700 p-12 rounded-3xl shadow-2xl text-white">
+                <div className="p-12 rounded-3xl shadow-2xl text-white bg-green-600">
                     <p className="text-3xl">Orders Today</p>
                     <p className="text-7xl font-bold mt-6">{stats.orders}</p>
                 </div>
-                <div className="bg-gradient-to-br from-orange-600 to-red-700 p-12 rounded-3xl shadow-2xl text-white">
+                <div className="p-12 rounded-3xl shadow-2xl text-white bg-orange-600">
                     <p className="text-3xl">Avg Order</p>
                     <p className="text-7xl font-bold mt-6">${stats.avg}</p>
                 </div>
