@@ -242,7 +242,7 @@ const MenuManager = () => {
     const sortSizes = (arr: Size[]) => [...arr].sort((a, b) => ['Small', 'Regular', 'Large'].indexOf(a.name) - ['Small', 'Regular', 'Large'].indexOf(b.name))
 
     if (loading) return (
-        <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center">
             <Loader2 className="w-20 h-20 animate-spin text-cyan-400" />
         </div>
     )
@@ -250,7 +250,7 @@ const MenuManager = () => {
     return (
         <>
             <Toaster position="top-center" />
-            <div className="min-h-screen bg-black text-white p-8">
+            <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
                 <div className="text-center mb-12">
                     <h1 className="text-7xl font-black font-extrabold text-brand">
                         PRO MENU MANAGER
@@ -261,7 +261,7 @@ const MenuManager = () => {
                             <p className="text-2xl text-orange-400 font-bold">Editing Mode</p>
                             <button
                                 onClick={resetForm}
-                                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-white font-semibold"
+                                className="px-6 py-3 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-xl font-semibold"
                             >
                                 Cancel Edit
                             </button>
@@ -479,7 +479,7 @@ const MenuManager = () => {
                         {editingId && (
                             <button
                                 onClick={resetForm}
-                                className="px-16 py-8 text-3xl font-bold bg-gray-700 hover:bg-gray-600 text-white rounded-full shadow-2xl"
+                                className="px-16 py-8 text-3xl font-bold bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-full shadow-2xl"
                             >
                                 CANCEL
                             </button>

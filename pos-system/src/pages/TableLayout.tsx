@@ -258,8 +258,8 @@ const TableLayout = () => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center">
-                <div className="animate-spin rounded-full h-20 w-20 border-4 border-pink-500 border-t-transparent"></div>
+            <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-20 w-20 border-4 border-brand border-t-transparent"></div>
             </div>
         )
     }
@@ -268,7 +268,7 @@ const TableLayout = () => {
         <>
             <Toaster position="top-center" />
 
-            <div className="min-h-screen bg-black text-white p-8">
+            <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
                 <div className="flex justify-between items-center mb-10">
                     <div>
                         <h1 className="text-5xl font-extrabold text-white">
@@ -296,7 +296,7 @@ const TableLayout = () => {
                 </div>
 
                 <div
-                    className="relative bg-black/40 backdrop-blur-xl rounded-3xl border-4 border-purple-700/50 shadow-2xl overflow-hidden h-[80vh]"
+                    className="relative bg-gray-100 dark:bg-slate-800/40 backdrop-blur-xl rounded-3xl border-2 border-gray-300 dark:border-slate-600 shadow-xl overflow-hidden h-[80vh]"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
                 >
@@ -435,7 +435,7 @@ const TableLayout = () => {
                                     setIsAdding(false)
                                     setEditingTable(null)
                                 }}
-                                className="flex-1 py-5 bg-gray-700 rounded-xl font-bold text-xl shadow-xl hover:bg-gray-600 transition"
+                                className="flex-1 py-5 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-xl font-bold text-xl shadow-xl transition"
                             >
                                 Cancel
                             </button>

@@ -84,7 +84,7 @@ const InventoryDashboard = () => {
     return (
         <>
             <Toaster position="top-center" />
-            <div className="min-h-screen bg-black text-white p-8">
+            <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
                 <div className="max-w-7xl mx-auto">
 
                     <div className="flex justify-between items-center mb-10">
@@ -206,7 +206,7 @@ const InventoryDashboard = () => {
                                 {editing ? 'UPDATE' : 'ADD'}
                             </button>
                             <button onClick={() => setShowModal(false)}
-                                className="flex-1 py-6 bg-gray-700 rounded-2xl font-bold text-2xl hover:bg-gray-600 transition">
+                                className="flex-1 py-6 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-2xl font-bold text-2xl transition">
                                 Cancel
                             </button>
                         </div>

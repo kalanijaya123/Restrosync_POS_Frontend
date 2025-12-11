@@ -79,29 +79,134 @@ button:focus-visible {
   }
 }
 
-/* Brand color utilities (project-wide) */
+/* Brand color utilities (project-wide) - Royal Blue Theme */
 :root {
-  --brand-purple: #9D4EDD;
+  --brand-blue: #4169E1;
+  --brand-blue-light: #6495ED;
+  --brand-blue-dark: #0047AB;
+  --brand-blue-hover: #315FD8;
 }
 
-/* Use .text-brand for text and .bg-brand for solid backgrounds replacing gradients */
+/* Dark mode variables */
+[data-theme="dark"] {
+  --bg-primary: #0F172A;
+  --bg-secondary: #1E293B;
+  --bg-tertiary: #334155;
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --border-color: #475569;
+}
+
+[data-theme="light"] {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F8FAFC;
+  --bg-tertiary: #E2E8F0;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --border-color: #CBD5E1;
+}
+
+/* Use .text-brand for text and .bg-brand for solid backgrounds */
 .text-brand {
-  color: var(--brand-purple) !important;
+  color: var(--brand-blue) !important;
 }
 
 .bg-brand {
-  background-color: var(--brand-purple) !important;
+  background-color: var(--brand-blue) !important;
+}
+
+.bg-brand:hover {
+  background-color: var(--brand-blue-hover) !important;
 }
 
 .border-brand {
-  border-color: var(--brand-purple) !important;
+  border-color: var(--brand-blue) !important;
 }
 
 .ring-brand {
-  box-shadow: 0 0 0 4px rgba(157, 78, 221, 0.12);
+  box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.15);
 }
 
 /* Utility for semi-opaque brand backgrounds */
 .bg-brand-opaque {
-  background-color: rgba(157, 78, 221, 0.12) !important;
+  background-color: rgba(65, 105, 225, 0.1) !important;
+}
+
+/* Global theme-aware utilities */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Page backgrounds */
+.page-bg {
+  background-color: #FFFFFF;
+}
+
+[data-theme="dark"] .page-bg {
+  background-color: #0F172A;
+}
+
+.page-bg-secondary {
+  background-color: #F8FAFC;
+}
+
+[data-theme="dark"] .page-bg-secondary {
+  background-color: #1E293B;
+}
+
+/* Card backgrounds */
+.card-bg {
+  background-color: #FFFFFF;
+  border-color: #E2E8F0;
+}
+
+[data-theme="dark"] .card-bg {
+  background-color: #1E293B;
+  border-color: #334155;
+}
+
+/* Text colors */
+.text-primary {
+  color: #0F172A;
+}
+
+[data-theme="dark"] .text-primary {
+  color: #F1F5F9;
+}
+
+.text-secondary {
+  color: #475569;
+}
+
+[data-theme="dark"] .text-secondary {
+  color: #CBD5E1;
+}
+
+/* Input fields */
+input,
+select,
+textarea {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #334155 !important;
+  color: #F1F5F9 !important;
+  border-color: #475569 !important;
+}
+
+input::placeholder,
+select::placeholder,
+textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] select::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #64748B !important;
 }

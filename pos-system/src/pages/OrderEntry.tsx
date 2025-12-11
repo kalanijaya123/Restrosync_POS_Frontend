@@ -216,7 +216,7 @@ const OrderEntry = () => {
         }
     }
 
-    if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-6xl text-cyan-400">Loading...</div>
+    if (loading) return <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center text-6xl text-brand">Loading...</div>
 
     return (
         <>
@@ -224,8 +224,8 @@ const OrderEntry = () => {
 
             {/* CUSTOMER MODAL */}
             {showCustomerModal && (
-                <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-6">
-                    <div className="bg-brand rounded-3xl p-10 max-w-lg w-full border-2 border-cyan-500 shadow-2xl">
+                <div className="fixed inset-0 bg-black/70 dark:bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-6">
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-10 max-w-lg w-full border-2 border-gray-200 dark:border-slate-700 shadow-2xl">
                         <div className="flex justify-between items-center mb-8">
                             <h2 className="text-4xl font-bold text-cyan-400 flex items-center gap-4">
                                 <User className="w-12 h-12" /> Customer Info
@@ -264,7 +264,7 @@ const OrderEntry = () => {
                         </div>
 
                         <div className="flex gap-4 mt-10">
-                            <button onClick={() => setShowCustomerModal(false)} className="flex-1 py-5 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold text-xl">Cancel</button>
+                            <button onClick={() => setShowCustomerModal(false)} className="flex-1 py-5 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-xl font-bold text-xl">Cancel</button>
                             <button onClick={confirmOrder} className="flex-1 py-5 bg-brand rounded-xl font-bold text-xl shadow-xl">
                                 Confirm & Go to Payment
                             </button>
@@ -305,7 +305,7 @@ const OrderEntry = () => {
                         </div>
 
                         <div className="flex gap-4 mt-8">
-                            <button onClick={() => setShowExtrasModal(false)} className="flex-1 py-5 bg-gray-700 rounded-xl font-bold text-xl">Cancel</button>
+                            <button onClick={() => setShowExtrasModal(false)} className="flex-1 py-5 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-xl font-bold text-xl">Cancel</button>
                             <button onClick={confirmAddToCart} className="flex-1 py-5 bg-brand rounded-xl font-bold text-xl">
                                 Add • Rs {currentItemForExtras.size.price + selectedExtras.reduce((s, e) => s + e.price * e.qty, 0)}
                             </button>
@@ -315,7 +315,7 @@ const OrderEntry = () => {
             )}
 
             {/* MAIN PAGE */}
-            <div className="min-h-screen bg-black text-white flex">
+            <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white flex transition-colors">
                 <div className="flex-1 p-8 overflow-y-auto">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex justify-between items-center mb-8">
@@ -368,7 +368,7 @@ const OrderEntry = () => {
                 </div>
 
                 {/* CART */}
-                <div className="w-80 bg-black/90 border-l border-brand p-6 flex flex-col">
+                <div className="w-80 bg-white dark:bg-slate-800 border-l-2 border-gray-200 dark:border-slate-700 p-6 flex flex-col">
                     <div className="flex items-center gap-4 mb-8">
                         <ShoppingCart className="w-10 h-10 text-cyan-400" />
                         <h2 className="text-2xl font-bold">Cart ({cart.reduce((s, i) => s + i.qty, 0)})</h2>

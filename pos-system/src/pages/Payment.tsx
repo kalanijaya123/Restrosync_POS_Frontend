@@ -118,7 +118,7 @@ const Payment = () => {
     // If no order selected, show order list
     if (!selectedOrder) {
         return (
-            <div className="min-h-screen bg-black text-white p-8">
+            <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
                 <h1 className="text-5xl font-bold text-center mb-8 text-brand">
                     {showAllOrders ? 'All Orders' : 'Unpaid Orders'}
                 </h1>
@@ -147,7 +147,7 @@ const Payment = () => {
                                     type="date"
                                     value={selectedDate}
                                     onChange={(e) => setSelectedDate(e.target.value)}
-                                    className="px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-600 focus:border-brand focus:outline-none"
+                                    className="px-4 py-3 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-600 focus:border-brand focus:outline-none"
                                 />
                                 {selectedDate && (
                                     <button
@@ -184,7 +184,7 @@ const Payment = () => {
                                 <div
                                     key={order.id}
                                     onClick={() => setSelectedOrder(order)}
-                                    className="bg-gray-900 border-2 border-brand/40 rounded-2xl p-6 cursor-pointer hover:border-brand hover:shadow-2xl hover:shadow-brand/20 transition-all"
+                                    className="bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 hover:border-brand rounded-2xl p-6 cursor-pointer hover:shadow-xl transition-all"
                                 >
                                     <div className="mb-4">
                                         <h2 className="text-2xl font-bold text-brand mb-2">
@@ -254,7 +254,7 @@ const Payment = () => {
     const change = method === 'cash' ? Number(cashReceived) - (order.total || 0) : 0
 
     return (
-        <div className="min-h-screen bg-black text-white p-8">
+        <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
             <div className="mb-6">
                 <button
                     onClick={() => {
@@ -262,7 +262,7 @@ const Payment = () => {
                         setCashReceived('')
                         setMethod('cash')
                     }}
-                    className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg border border-gray-600"
+                    className="px-6 py-3 bg-gray-200 dark:bg-slate-800 hover:bg-gray-300 dark:hover:bg-slate-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-slate-600"
                 >
                     ← Back to Orders
                 </button>
@@ -270,7 +270,7 @@ const Payment = () => {
 
             <h1 className="text-5xl font-bold text-center mb-8 text-brand">Payment</h1>
 
-            <div className="max-w-4xl mx-auto bg-gray-900 border-2 border-brand rounded-3xl shadow-2xl p-8">
+            <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 rounded-3xl shadow-xl p-8">
                 {/* Order Info */}
                 <div className="mb-8">
                     <h2 className="text-3xl font-bold text-brand">
@@ -292,7 +292,7 @@ const Payment = () => {
                     <h3 className="text-lg font-semibold text-gray-300 mb-3">Order Items:</h3>
                     {order.items && order.items.length > 0 ? (
                         order.items.map((item, i) => (
-                            <div key={i} className="flex justify-between text-lg bg-gray-800 rounded-lg p-4">
+                            <div key={i} className="flex justify-between text-lg bg-gray-100 dark:bg-slate-700 rounded-lg p-4">
                                 <span className="text-white">{item.qty} × {item.sizeName} {item.menuItemName}</span>
                                 <span className="text-green-400 font-bold">Rs {(item.basePrice * item.qty).toFixed(2)}</span>
                             </div>
@@ -321,7 +321,7 @@ const Payment = () => {
                             </button>
                             <button
                                 onClick={() => setSelectedOrder(null)}
-                                className="px-12 py-6 bg-gray-700 hover:bg-gray-600 text-white text-xl rounded-lg"
+                                className="px-12 py-6 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white text-xl rounded-lg"
                             >
                                 Back to Orders
                             </button>
