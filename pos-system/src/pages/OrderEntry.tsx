@@ -176,7 +176,9 @@ const OrderEntry = () => {
             customerName: fullName,
             customerPhone: fullPhone,
             notes: "",
-            waiterName: "Staff"
+            waiterName: "Staff",
+            paymentStatus: "unpaid",            // Mark as unpaid initially
+            status: "pending"                  // Mark as pending until payment
         }
 
         try {
@@ -188,10 +190,13 @@ const OrderEntry = () => {
 
             if (!res.ok) throw new Error(await res.text())
 
-            toast.success(`Order sent! KOT for ${fullName}`, { duration: 5000 })
+            const createdOrder = await res.json()
+            toast.success(`Order created for ${fullName}! Proceeding to payment...`, { duration: 2000 })
             setCart([])
             setShowCustomerModal(false)
-            setTimeout(() => navigate('/tables'), 1500)
+
+            // Navigate to payment page
+            setTimeout(() => navigate('/payment'), 500)
         } catch (err: any) {
             toast.error('Failed: ' + err.message)
         }
@@ -247,7 +252,7 @@ const OrderEntry = () => {
                         <div className="flex gap-4 mt-10">
                             <button onClick={() => setShowCustomerModal(false)} className="flex-1 py-5 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold text-xl">Cancel</button>
                             <button onClick={confirmOrder} className="flex-1 py-5 bg-brand rounded-xl font-bold text-xl shadow-xl">
-                                Confirm & Send
+                                Confirm & Go to Payment
                             </button>
                         </div>
                     </div>

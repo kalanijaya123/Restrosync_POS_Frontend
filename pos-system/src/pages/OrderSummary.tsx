@@ -4,9 +4,12 @@ import toast, { Toaster } from 'react-hot-toast'
 import { Calendar, Clock, User, ChevronLeft, ChevronRight, Package } from 'lucide-react'
 
 interface OrderItem {
-    name: string
-    qty: number
+    menuItemName?: string
+    name?: string
+    qty?: number
+    quantity?: number
     price: number
+    sizeName?: string
 }
 
 interface Order {
@@ -17,11 +20,16 @@ interface Order {
     tableNumber?: string
     createdAt: string
     status: string
+    kotToken?: string
+    orderNo?: number
+    customerName?: string
+    customerPhone?: string
+    waiterName?: string
+    source?: string
 }
 
 const OrderSummary = () => {
     const [orders, setOrders] = useState<Order[]>([])
-    const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
     const [selectedDate, setSelectedDate] = useState<Date | null>(null)
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
     const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -51,9 +59,12 @@ const OrderSummary = () => {
                     ).toISOString()
                     : order.createdAt,
                 items: order.items.map((item: any) => ({
+                    menuItemName: item.menuItemName,
                     name: item.name,
-                    qty: item.qty,
-                    price: item.price
+                    qty: item.qty || item.quantity,
+                    quantity: item.quantity,
+                    price: item.price,
+                    sizeName: item.sizeName
                 }))
             }))
 
@@ -62,7 +73,6 @@ const OrderSummary = () => {
             )
 
             setOrders(sorted)
-            setFilteredOrders(sorted)
         } catch (err) {
             toast.error('Failed to load orders')
         } finally {
@@ -131,8 +141,10 @@ const OrderSummary = () => {
                         <div className="bg-black/50 backdrop-blur-xl rounded-3xl border border-brand p-8 shadow-2xl">
                             <div className="flex justify-between items-start mb-8">
                                 <div>
-                                    <h2 className="text-3xl font-bold text-cyan-400">Order #{selectedOrder.id.slice(-6).toUpperCase()}</h2>
-                                    <div className="flex gap-6 mt-4 text-gray-300">
+                                    <h2 className="text-3xl font-bold text-cyan-400">
+                                        {selectedOrder.kotToken || `Order #${selectedOrder.orderNo || selectedOrder.id.slice(-6).toUpperCase()}`}
+                                    </h2>
+                                    <div className="flex flex-wrap gap-4 mt-4 text-gray-300">
                                         <div className="flex items-center gap-2">
                                             <Calendar className="w-5 h-5 text-orange-400" />
                                             <span>{format(new Date(selectedOrder.createdAt), 'dd MMM yyyy')}</span>
@@ -141,17 +153,41 @@ const OrderSummary = () => {
                                             <Clock className="w-5 h-5 text-green-400" />
                                             <span>{format(new Date(selectedOrder.createdAt), 'hh:mm a')}</span>
                                         </div>
-                                        {selectedOrder.tableNumber && (
+                                        {(selectedOrder.tableNumber || selectedOrder.tableId) && (
                                             <div className="flex items-center gap-2">
                                                 <User className="w-5 h-5 text-red-400" />
-                                                <span>Table {selectedOrder.tableNumber}</span>
+                                                <span>Table {selectedOrder.tableNumber || selectedOrder.tableId}</span>
+                                            </div>
+                                        )}
+                                        {selectedOrder.source && (
+                                            <div className="flex items-center gap-2 bg-brand/20 px-3 py-1 rounded-full">
+                                                <span className="capitalize">{selectedOrder.source}</span>
                                             </div>
                                         )}
                                     </div>
+                                    {selectedOrder.customerName && (
+                                        <div className="mt-4 bg-white/5 rounded-lg p-4 border border-white/10">
+                                            <p className="text-xs text-gray-400 mb-1">Customer Details</p>
+                                            <p className="text-lg font-semibold text-white">{selectedOrder.customerName}</p>
+                                            {selectedOrder.customerPhone && (
+                                                <p className="text-sm text-gray-300">{selectedOrder.customerPhone}</p>
+                                            )}
+                                            {selectedOrder.waiterName && (
+                                                <p className="text-xs text-gray-400 mt-2">Served by: {selectedOrder.waiterName}</p>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="text-right">
                                     <p className="text-sm text-gray-400">Total Amount</p>
                                     <p className="text-5xl font-extrabold text-green-400">Rs {selectedOrder.total}</p>
+                                    <div className="mt-2 inline-block px-3 py-1 rounded-full text-sm font-semibold
+                                        ${selectedOrder.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                                            selectedOrder.status === 'preparing' ? 'bg-amber-500/20 text-amber-400' :
+                                            selectedOrder.status === 'pending' ? 'bg-red-500/20 text-red-400' :
+                                            'bg-gray-500/20 text-gray-400'}">
+                                        {selectedOrder.status}
+                                    </div>
                                 </div>
                             </div>
 
@@ -162,13 +198,18 @@ const OrderSummary = () => {
                                             <div className="flex items-center gap-4">
                                                 <Package className="w-8 h-8 text-orange-400" />
                                                 <div>
-                                                    <p className="text-xl font-semibold">{item.name}</p>
+                                                    <p className="text-xl font-semibold">{item.menuItemName || item.name || 'Item'}</p>
+                                                    {item.sizeName && (
+                                                        <span className="text-xs bg-brand/30 px-2 py-1 rounded-full text-brand mr-2">
+                                                            {item.sizeName}
+                                                        </span>
+                                                    )}
                                                     <p className="text-sm text-gray-400">Rs {item.price} each</p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-3xl font-bold text-cyan-300">{item.qty}×</p>
-                                                <p className="text-lg text-green-400">Rs {item.price * item.qty}</p>
+                                                <p className="text-3xl font-bold text-cyan-300">{item.qty || item.quantity || 1}×</p>
+                                                <p className="text-lg text-green-400">Rs {item.price * (item.qty || item.quantity || 1)}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -191,13 +232,31 @@ const OrderSummary = () => {
                                             onClick={() => setSelectedOrder(order)}
                                             className="bg-black/40 backdrop-blur rounded-2xl p-6 border border-brand/40 hover:border-cyan-500/60 transition cursor-pointer hover:shadow-2xl hover:shadow-cyan-500/20"
                                         >
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <p className="text-xl font-bold text-white">Order #{order.id.slice(-6).toUpperCase()}</p>
-                                                    <div className="flex gap-4 mt-2 text-sm text-gray-400">
-                                                        <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {format(new Date(order.createdAt), 'hh:mm a')}</span>
-                                                        {order.tableNumber && <span className="flex items-center gap-1"><User className="w-4 h-4" /> Table {order.tableNumber}</span>}
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <p className="text-xl font-bold text-white">
+                                                        {order.kotToken || `Order #${order.orderNo || order.id.slice(-6).toUpperCase()}`}
+                                                    </p>
+                                                    <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-400">
+                                                        <span className="flex items-center gap-1">
+                                                            <Clock className="w-4 h-4" />
+                                                            {format(new Date(order.createdAt), 'hh:mm a')}
+                                                        </span>
+                                                        {(order.tableNumber || order.tableId) && (
+                                                            <span className="flex items-center gap-1">
+                                                                <User className="w-4 h-4" />
+                                                                Table {order.tableNumber || order.tableId}
+                                                            </span>
+                                                        )}
+                                                        {order.customerName && (
+                                                            <span className="flex items-center gap-1 text-cyan-400">
+                                                                {order.customerName}
+                                                            </span>
+                                                        )}
                                                     </div>
+                                                    {order.waiterName && (
+                                                        <p className="text-xs text-gray-500 mt-1">Served by: {order.waiterName}</p>
+                                                    )}
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-3xl font-extrabold text-green-400">Rs {order.total}</p>

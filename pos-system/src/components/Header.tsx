@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, User } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 
 const Header = () => {
     const navigate = useNavigate()
