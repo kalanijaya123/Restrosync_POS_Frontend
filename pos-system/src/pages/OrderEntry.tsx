@@ -31,6 +31,7 @@ const OrderEntry = () => {
     const [selectedCategory, setSelectedCategory] = useState('All')
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
+    const [tableNumber, setTableNumber] = useState<string | null>(null)
 
     // Modals
     const [showExtrasModal, setShowExtrasModal] = useState(false)
@@ -48,7 +49,22 @@ const OrderEntry = () => {
 
     useEffect(() => {
         fetchMenu()
+        if (tableId) {
+            fetchTableDetails()
+        }
     }, [])
+
+    const fetchTableDetails = async () => {
+        try {
+            const res = await fetch(`http://localhost:8080/api/tables/${tableId}`)
+            if (!res.ok) throw new Error()
+            const data = await res.json()
+            setTableNumber(data.number)  // Store the actual table number like "T1", "VIP-3"
+        } catch (err) {
+            console.error('Failed to fetch table details')
+            setTableNumber(null)
+        }
+    }
 
     const fetchMenu = async () => {
         try {
@@ -157,7 +173,7 @@ const OrderEntry = () => {
         // FINAL LOGIC — 100% CORRECT
         const isDineIn = !!tableId  // if tableId exists → dine-in
         const source = isDineIn ? 'dine-in' : 'takeaway'
-        const tableNumber = isDineIn ? tableId!.slice(-4) : null
+        const tableNum = isDineIn ? tableNumber : null  // Use actual table number like "T1", "VIP-3"
 
         const payload = {
             items: cart.map(c => ({
@@ -171,14 +187,12 @@ const OrderEntry = () => {
                 }))
             })),
             total: Math.round(total),
-            tableNumber: tableNumber,           // "05", "12", or null
+            tableNumber: tableNum,              // "T1", "VIP-3", or null
             source: source,                     // "dine-in" or "takeaway"
             customerName: fullName,
             customerPhone: fullPhone,
             notes: "",
-            waiterName: "Staff",
-            paymentStatus: "unpaid",            // Mark as unpaid initially
-            status: "pending"                  // Mark as pending until payment
+            waiterName: "Staff"
         }
 
         try {
@@ -308,7 +322,7 @@ const OrderEntry = () => {
                             <button onClick={() => navigate('/tables')} className="flex items-center gap-3 px-6 py-4 bg-white/10 rounded-xl">
                                 <ArrowLeft /> Back
                             </button>
-                            {tableId && <div className="bg-brand px-12 py-6 rounded-3xl text-5xl font-bold text-white">T{tableId.slice(-4)}</div>}
+                            {tableId && <div className="bg-brand px-12 py-6 rounded-3xl text-5xl font-bold text-white">{tableNumber || 'Table'}</div>}
                         </div>
 
                         <h1 className="text-4xl font-extrabold text-center mb-6 text-white">Take Order</h1>

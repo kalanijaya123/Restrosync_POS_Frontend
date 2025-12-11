@@ -242,12 +242,10 @@ const OrderSummary = () => {
                                                             <Clock className="w-4 h-4" />
                                                             {format(new Date(order.createdAt), 'hh:mm a')}
                                                         </span>
-                                                        {(order.tableNumber || order.tableId) && (
-                                                            <span className="flex items-center gap-1">
-                                                                <User className="w-4 h-4" />
-                                                                Table {order.tableNumber || order.tableId}
-                                                            </span>
-                                                        )}
+                                                        <span className="flex items-center gap-1">
+                                                            <User className="w-4 h-4" />
+                                                            {order.tableNumber || (order.source === 'takeaway' ? 'Takeaway' : order.tableId ? `Table ${order.tableId}` : 'N/A')}
+                                                        </span>
                                                         {order.customerName && (
                                                             <span className="flex items-center gap-1 text-cyan-400">
                                                                 {order.customerName}
