@@ -1,7 +1,7 @@
 // MenuManager.tsx – FINAL PRO VERSION (WORKS 100% WITH YOUR BACKEND)
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Upload, Plus, Trash2, X, Camera, Loader2, Package } from 'lucide-react'
+import { Upload, Plus, Trash2, X, Camera, Loader2, Package, Edit2 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 
 interface Size {
@@ -47,6 +47,7 @@ const MenuManager = () => {
     const [loading, setLoading] = useState(true)
 
     // Form
+    const [editingId, setEditingId] = useState<string | null>(null)
     const [name, setName] = useState('')
     const [category, setCategory] = useState('')
     const [newCategory, setNewCategory] = useState('')
@@ -153,7 +154,7 @@ const MenuManager = () => {
         toast.success(`Extra "${newExtraName}" added`)
     }
 
-    // FINAL WORKING SUBMIT
+    // FINAL WORKING SUBMIT (ADD OR UPDATE)
     const handleSubmit = async () => {
         if (!name.trim()) return toast.error('Enter dish name')
         if (!category) return toast.error('Select category')
@@ -170,8 +171,12 @@ const MenuManager = () => {
         if (mediaFile) formData.append('media', mediaFile)
 
         try {
-            const res = await fetch('http://localhost:8080/api/menu', {
-                method: 'POST',
+            const url = editingId
+                ? `http://localhost:8080/api/menu/${editingId}`
+                : 'http://localhost:8080/api/menu'
+
+            const res = await fetch(url, {
+                method: editingId ? 'PUT' : 'POST',
                 body: formData
             })
 
@@ -180,7 +185,7 @@ const MenuManager = () => {
                 throw new Error(err || 'Save failed')
             }
 
-            toast.success('MENU ITEM ADDED SUCCESSFULLY!', { duration: 4000, icon: 'Fire' })
+            toast.success(editingId ? 'MENU ITEM UPDATED!' : 'MENU ITEM ADDED SUCCESSFULLY!', { duration: 4000 })
             resetForm()
             fetchAllData()
         } catch (err: any) {
@@ -190,13 +195,47 @@ const MenuManager = () => {
         }
     }
 
+    const handleEdit = (item: MenuItem) => {
+        setEditingId(item.id)
+        setName(item.name)
+        setCategory(item.category)
+        setSizes(item.sizes.length > 0 ? item.sizes : [{ name: 'Small', price: 0 }, { name: 'Regular', price: 0 }, { name: 'Large', price: 0 }])
+        setRecipe(item.recipe || [])
+        setExtras(item.extras || [])
+        if (item.mediaUrl) {
+            setPreviewUrl(item.mediaUrl)
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        toast.success(`Editing: ${item.name}`)
+    }
+
+    const handleDelete = async (id: string, name: string) => {
+        if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
+
+        try {
+            const res = await fetch(`http://localhost:8080/api/menu/${id}`, {
+                method: 'DELETE'
+            })
+
+            if (!res.ok) throw new Error('Delete failed')
+
+            toast.success(`${name} deleted`)
+            fetchAllData()
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to delete')
+        }
+    }
+
     const resetForm = () => {
+        setEditingId(null)
         setName('')
         setSizes([{ name: 'Small', price: 0 }, { name: 'Regular', price: 0 }, { name: 'Large', price: 0 }])
         setRecipe([])
         setExtras([])
         setMediaFile(null)
-        if (previewUrl) URL.revokeObjectURL(previewUrl)
+        if (previewUrl && !previewUrl.startsWith('http')) {
+            URL.revokeObjectURL(previewUrl)
+        }
         setPreviewUrl(null)
     }
 
@@ -217,6 +256,17 @@ const MenuManager = () => {
                         PRO MENU MANAGER
                     </h1>
                     <p className="text-3xl mt-4 text-gray-300">Recipe • Extras • Sizes • Image • Inventory Sync</p>
+                    {editingId && (
+                        <div className="mt-6 flex items-center justify-center gap-4">
+                            <p className="text-2xl text-orange-400 font-bold">Editing Mode</p>
+                            <button
+                                onClick={resetForm}
+                                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-white font-semibold"
+                            >
+                                Cancel Edit
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* ADD FORM */}
@@ -425,13 +475,21 @@ const MenuManager = () => {
                         </div>
                     </div>
 
-                    <div className="text-center mt-12">
+                    <div className="text-center mt-12 flex gap-6 justify-center">
+                        {editingId && (
+                            <button
+                                onClick={resetForm}
+                                className="px-16 py-8 text-3xl font-bold bg-gray-700 hover:bg-gray-600 text-white rounded-full shadow-2xl"
+                            >
+                                CANCEL
+                            </button>
+                        )}
                         <button
                             onClick={handleSubmit}
                             disabled={uploading}
                             className="px-32 py-8 text-5xl font-extrabold bg-brand text-white rounded-full shadow-2xl transform hover:scale-105 disabled:opacity-60"
                         >
-                            {uploading ? 'SAVING...' : 'ADD MENU ITEM'}
+                            {uploading ? 'SAVING...' : editingId ? 'UPDATE ITEM' : 'ADD MENU ITEM'}
                         </button>
                     </div>
                 </motion.div>
@@ -476,6 +534,23 @@ const MenuManager = () => {
                                             ))}
                                         </div>
                                     )}
+
+                                    <div className="mt-6 pt-6 border-t border-white/20 flex gap-3">
+                                        <button
+                                            onClick={() => handleEdit(item)}
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-white transition"
+                                        >
+                                            <Edit2 className="w-5 h-5" />
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(item.id, item.name)}
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold text-white transition"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                            Delete
+                                        </button>
+                                    </div>
                                 </div>
                             </motion.div>
                         ))}
