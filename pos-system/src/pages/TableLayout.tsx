@@ -268,10 +268,10 @@ const TableLayout = () => {
         <>
             <Toaster position="top-center" />
 
-            <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
+            <div className="text-gray-900 dark:text-white p-8 transition-colors">
                 <div className="flex justify-between items-center mb-10">
                     <div>
-                        <h1 className="text-5xl font-extrabold text-white">
+                        <h1 className="text-5xl font-extrabold text-gray-900 dark:text-white">
                             Restaurant Floor Plan
                         </h1>
                         <p className="text-brand mt-3 text-lg">
@@ -296,14 +296,14 @@ const TableLayout = () => {
                 </div>
 
                 <div
-                    className="relative bg-gray-100 dark:bg-slate-800/40 backdrop-blur-xl rounded-3xl border-2 border-gray-300 dark:border-slate-600 shadow-xl overflow-hidden h-[80vh]"
+                    className="relative bg-gray-50 dark:bg-slate-800/40 backdrop-blur-xl rounded-3xl border-2 border-gray-200 dark:border-slate-600 shadow-xl overflow-hidden h-[80vh]"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
                 >
-                    <div className="absolute inset-0 opacity-10">
+                    <div className="absolute inset-0 opacity-5 dark:opacity-10">
                         <div className="grid grid-cols-12 grid-rows-12 h-full">
                             {Array.from({ length: 144 }).map((_, i) => (
-                                <div key={i} className="border border-brand/30"></div>
+                                <div key={i} className="border border-gray-300 dark:border-brand/30"></div>
                             ))}
                         </div>
                     </div>
@@ -376,7 +376,7 @@ const TableLayout = () => {
 
                     {layout.length === 0 && (
                         <div className="flex items-center justify-center h-full">
-                            <p className="text-4xl text-brand font-bold">Click "Add Table" to begin</p>
+                            <p className="text-4xl text-gray-400 dark:text-brand font-bold">Click "Add Table" to begin</p>
                         </div>
                     )}
                 </div>
@@ -385,8 +385,8 @@ const TableLayout = () => {
             {/* ADD / EDIT MODAL */}
             {(isAdding || editingTable) && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50">
-                    <div className="bg-brand p-10 rounded-3xl shadow-2xl border border-brand w-96">
-                        <h2 className="text-3xl font-bold text-cyan-300 mb-8 text-center">
+                    <div className="bg-white dark:bg-slate-800 p-10 rounded-3xl shadow-2xl border-2 border-gray-200 dark:border-slate-700 w-96">
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
                             {editingTable ? 'Edit Table' : 'Add New Table'}
                         </h2>
                         <input
@@ -398,7 +398,7 @@ const TableLayout = () => {
                                     ? setEditingTable({ ...editingTable, number: e.target.value })
                                     : setNewTable({ ...newTable, number: e.target.value })
                             }
-                            className="w-full px-6 py-5 bg-white/10 border border-brand rounded-xl text-xl mb-6 placeholder-purple-400"
+                            className="w-full px-6 py-5 bg-white dark:bg-slate-700 border-2 border-gray-300 dark:border-slate-600 rounded-xl text-xl mb-6 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-brand focus:outline-none"
                         />
                         <select
                             value={editingTable ? editingTable.chairs : newTable.chairs}
@@ -407,7 +407,7 @@ const TableLayout = () => {
                                     ? setEditingTable({ ...editingTable, chairs: Number(e.target.value) })
                                     : setNewTable({ ...newTable, chairs: Number(e.target.value) })
                             }
-                            className="w-full px-6 py-5 bg-white/10 border border-brand rounded-xl text-xl"
+                            className="w-full px-6 py-5 bg-white dark:bg-slate-700 border-2 border-gray-300 dark:border-slate-600 rounded-xl text-xl text-gray-900 dark:text-white focus:border-brand focus:outline-none"
                         >
                             {[2, 4, 6, 8, 10, 12].map(n => (
                                 <option key={n} value={n}>{n} Seats</option>

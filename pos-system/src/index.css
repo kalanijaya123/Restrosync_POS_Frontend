@@ -5,10 +5,6 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -35,7 +31,11 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  /* keep background and color scheme but don't center the root element itself */
+  background-color: #FFFFFF;
+}
+
+[data-theme="dark"] body {
+  background-color: #0F172A;
 }
 
 h1 {
@@ -67,7 +67,6 @@ button:focus-visible {
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
-    background-color: #ffffff;
   }
 
   a:hover {
@@ -129,7 +128,7 @@ button:focus-visible {
 
 /* Utility for semi-opaque brand backgrounds */
 .bg-brand-opaque {
-  background-color: rgba(65, 105, 225, 0.1) !important;
+  background-color: rgba(79, 79, 79, 0.1) !important;
 }
 
 /* Global theme-aware utilities */

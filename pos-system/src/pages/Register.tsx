@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
+import api from '../services/api'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -11,6 +13,7 @@ const Register = () => {
     const [showConfirm, setShowConfirm] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const navigate = useNavigate()
+    const { theme } = useTheme()
 
     const validate = () => {
         const e: any = {}
@@ -22,42 +25,74 @@ const Register = () => {
         return Object.keys(e).length === 0
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!validate()) return
         setSubmitting(true)
 
         try {
-            const users = JSON.parse(localStorage.getItem('posUsers') || '[]')
-            if (users.find((u: any) => u.email === form.email)) {
-                setErrors({ email: 'Email already used.' })
-                setSubmitting(false)
-                return
-            }
-
-            users.push({
+            // Try backend registration first
+            const response = await api.post('/auth/register', {
                 username: form.username.trim(),
                 email: form.email.trim(),
                 password: form.password,
                 role: 'Staff'
             })
-            localStorage.setItem('posUsers', JSON.stringify(users))
 
-            setSubmitting(false)
-            alert('Account created successfully!')
-            navigate('/')
-        } catch (err) {
-            setErrors({ general: 'Something went wrong. Try again.' })
-            setSubmitting(false)
+            if (response.data) {
+                // Also save to localStorage for fallback
+                const users = JSON.parse(localStorage.getItem('posUsers') || '[]')
+                users.push({
+                    username: form.username.trim(),
+                    email: form.email.trim(),
+                    password: form.password,
+                    role: 'Staff'
+                })
+                localStorage.setItem('posUsers', JSON.stringify(users))
+
+                setSubmitting(false)
+                alert('Account created successfully!')
+                navigate('/')
+            }
+        } catch (err: any) {
+            // Fallback to localStorage for demo purposes
+            if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
+                try {
+                    const users = JSON.parse(localStorage.getItem('posUsers') || '[]')
+                    if (users.find((u: any) => u.email === form.email)) {
+                        setErrors({ email: 'Email already used.' })
+                        setSubmitting(false)
+                        return
+                    }
+
+                    users.push({
+                        username: form.username.trim(),
+                        email: form.email.trim(),
+                        password: form.password,
+                        role: 'Staff'
+                    })
+                    localStorage.setItem('posUsers', JSON.stringify(users))
+
+                    setSubmitting(false)
+                    alert('Account created successfully!')
+                    navigate('/')
+                } catch {
+                    setErrors({ general: 'Something went wrong. Try again.' })
+                    setSubmitting(false)
+                }
+            } else {
+                setErrors({ general: err.response?.data?.message || 'Registration failed. Try again.' })
+                setSubmitting(false)
+            }
         }
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-700 flex items-center justify-center p-6">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-10">
+        <div className={`min-h-screen bg-gradient-to-br ${theme === 'dark' ? 'from-blue-900 to-slate-900' : 'from-blue-500 to-blue-700'} flex items-center justify-center p-6`}>
+            <div className={`${theme === 'dark' ? 'bg-slate-800 text-white' : 'bg-white text-gray-800'} rounded-2xl shadow-2xl w-full max-w-lg p-10`}>
                 {/* CLEAN TITLE */}
-                <h1 className="text-4xl font-bold text-center text-gray-800 mb-1">Create Account</h1>
-                <p className="text-sm text-center text-gray-500 mb-8">Join RestroSync POS System</p>
+                <h1 className={`text-4xl font-bold text-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'} mb-1`}>Create Account</h1>
+                <p className={`text-sm text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mb-8`}>Join RestroSync POS System</p>
 
                 {errors.general && (
                     <div className="mb-4 p-3 bg-red-50 border border-red-300 text-red-700 rounded-lg text-sm">
@@ -68,46 +103,46 @@ const Register = () => {
                 <form onSubmit={handleSubmit} className="space-y-5">
                     {/* USERNAME */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                        <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Username</label>
                         <input
                             type="text"
                             placeholder="e.g. john123"
                             value={form.username}
                             onChange={(e) => setForm({ ...form, username: e.target.value })}
-                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${errors.username ? 'border-red-400' : 'border-gray-300'}`}
+                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.username ? 'border-red-400' : theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                         />
                         {errors.username && <p className="mt-1 text-xs text-red-600">{errors.username}</p>}
                     </div>
 
                     {/* EMAIL */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                        <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Email Address</label>
                         <input
                             type="email"
                             placeholder="john@restrosync.com"
                             value={form.email}
                             onChange={(e) => setForm({ ...form, email: e.target.value })}
-                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${errors.email ? 'border-red-400' : 'border-gray-300'}`}
+                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.email ? 'border-red-400' : theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                         />
                         {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
                     </div>
 
                     {/* PASSWORD */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Password</label>
                         <div className="relative">
                             <input
                                 type={showPassword ? 'text' : 'password'}
                                 placeholder="••••••••"
                                 value={form.password}
                                 onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${errors.password ? 'border-red-400' : 'border-gray-300'}`}
+                                className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.password ? 'border-red-400' : theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
                                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-indigo-600"
+                                className={`absolute inset-y-0 right-3 flex items-center ${theme === 'dark' ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-600'}`}
                             >
                                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                             </button>
@@ -117,20 +152,20 @@ const Register = () => {
 
                     {/* CONFIRM PASSWORD */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                        <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Confirm Password</label>
                         <div className="relative">
                             <input
                                 type={showConfirm ? 'text' : 'password'}
                                 placeholder="••••••••"
                                 value={form.confirmPassword}
                                 onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                                className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${errors.confirmPassword ? 'border-red-400' : 'border-gray-300'}`}
+                                className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.confirmPassword ? 'border-red-400' : theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowConfirm(!showConfirm)}
                                 aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
-                                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-indigo-600"
+                                className={`absolute inset-y-0 right-3 flex items-center ${theme === 'dark' ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-600'}`}
                             >
                                 {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
                             </button>
@@ -142,15 +177,16 @@ const Register = () => {
                     <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-70 text-white font-bold py-4 rounded-lg text-lg transition shadow-lg"
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-70 text-white font-bold py-4 rounded-lg text-lg transition shadow-lg"
+                        style={{ background: submitting ? undefined : 'linear-gradient(to right, #4169E1, #0047AB)' }}
                     >
                         {submitting ? 'Creating Account...' : 'Create Account'}
                     </button>
                 </form>
 
-                <p className="text-center mt-8 text-sm text-gray-600">
+                <p className={`text-center mt-8 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                     Already have an account?{' '}
-                    <Link to="/" className="text-indigo-600 font-bold hover:underline">
+                    <Link to="/" className="text-blue-600 font-bold hover:underline" style={{ color: '#4169E1' }}>
                         Sign In
                     </Link>
                 </p>
