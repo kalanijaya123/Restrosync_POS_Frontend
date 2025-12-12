@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
+import { getApiUrl } from '../services/api'
 
 export interface Notification {
     id: string
@@ -68,7 +69,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     useEffect(() => {
         const checkForNewOrders = async () => {
             try {
-                const res = await fetch('http://localhost:8080/api/orders/recent')
+                const res = await fetch(getApiUrl('/orders/recent'))
                 if (res.ok) {
                     await res.json()
                     // Check if there are new orders and add notification

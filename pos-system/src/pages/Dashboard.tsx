@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { getApiUrl } from '../services/api'
 
 const Dashboard = () => {
     const [stats, setStats] = useState({
@@ -8,7 +9,7 @@ const Dashboard = () => {
     })
 
     useEffect(() => {
-        fetch('http://localhost:8080/api/orders/dashboard/stats')
+        fetch(getApiUrl('/orders/dashboard/stats'))
             .then(r => r.ok ? r.json() : { totalOrders: 0, totalRevenue: 0, activeTables: 0 })
             .then(data => setStats(data))
             .catch(() => setStats({ totalOrders: 0, totalRevenue: 0, activeTables: 0 }))

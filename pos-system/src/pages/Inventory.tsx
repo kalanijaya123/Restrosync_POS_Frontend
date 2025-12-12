@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
 import { Plus, AlertTriangle, Search, Edit2 } from 'lucide-react'
+import { getApiUrl } from '../services/api'
 
 interface InventoryItem {
     id: string
@@ -26,7 +27,7 @@ const InventoryDashboard = () => {
 
     const fetchInventory = async () => {
         try {
-            const res = await fetch('http://localhost:8080/api/inventory')
+            const res = await fetch(getApiUrl('/inventory'))
             const data = await res.json()
             setItems(data)
         } catch (err) {
@@ -46,8 +47,8 @@ const InventoryDashboard = () => {
         try {
             const method = editing ? 'PUT' : 'POST'
             const url = editing
-                ? `http://localhost:8080/api/inventory/${editing.id}`
-                : 'http://localhost:8080/api/inventory'
+                ? getApiUrl(`/inventory/${editing.id}`)
+                : getApiUrl('/inventory')
 
             await fetch(url, {
                 method,
@@ -68,7 +69,7 @@ const InventoryDashboard = () => {
         const amount = prompt('Add how much stock? (e.g., 10)')
         if (!amount || isNaN(+amount)) return
 
-        await fetch(`http://localhost:8080/api/inventory/${id}/add`, {
+        await fetch(getApiUrl(`/inventory/${id}/add`), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ amount: parseFloat(amount) })

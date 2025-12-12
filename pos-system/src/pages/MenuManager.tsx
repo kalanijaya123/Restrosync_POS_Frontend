@@ -1,8 +1,9 @@
-// MenuManager.tsx – FINAL PRO VERSION (WORKS 100% WITH YOUR BACKEND)
+// src/pages/MenuManager.tsx – FULL CLOUDINARY VERSION (COMPLETE & WORKING)
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Trash2, X, Camera, Loader2, Package, Edit2 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
+import { getApiUrl } from '../services/api'
 
 interface Size {
     name: string
@@ -40,13 +41,17 @@ interface MenuItem {
     extras: ExtraItem[]
 }
 
+// CHANGE THESE TO YOUR CLOUDINARY ACCOUNT
+const CLOUDINARY_CLOUD_NAME = "dt0bdj2xg"  // ← Your actual cloud name
+const CLOUDINARY_UPLOAD_PRESET = "restrosync_menu"  // ← Your unsigned preset name
+
 const MenuManager = () => {
     const [menu, setMenu] = useState<MenuItem[]>([])
     const [inventory, setInventory] = useState<InventoryItem[]>([])
     const [categories, setCategories] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
 
-    // Form
+    // Form state
     const [editingId, setEditingId] = useState<string | null>(null)
     const [name, setName] = useState('')
     const [category, setCategory] = useState('')
@@ -62,7 +67,7 @@ const MenuManager = () => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
     const [uploading, setUploading] = useState(false)
 
-    // Temp for adding recipe/extra
+    // Temp for recipe/extra
     const [newIngredientId, setNewIngredientId] = useState('')
     const [newIngredientQtys, setNewIngredientQtys] = useState<Record<string, number>>({})
     const [newExtraName, setNewExtraName] = useState('')
@@ -70,7 +75,7 @@ const MenuManager = () => {
     const [newExtraQty, setNewExtraQty] = useState('')
     const [newExtraIngredientId, setNewExtraIngredientId] = useState('')
 
-    // Keep new qtys in sync when sizes change
+    // Keep quantities in sync with sizes
     useEffect(() => {
         setNewIngredientQtys(prev => {
             const next: Record<string, number> = {}
@@ -86,8 +91,8 @@ const MenuManager = () => {
     const fetchAllData = async () => {
         try {
             const [menuRes, invRes] = await Promise.all([
-                fetch('http://localhost:8080/api/menu'),
-                fetch('http://localhost:8080/api/inventory')
+                fetch(getApiUrl('/menu')),
+                fetch(getApiUrl('/inventory'))
             ])
 
             const menuData: MenuItem[] = await menuRes.json()
@@ -96,14 +101,121 @@ const MenuManager = () => {
             setMenu(menuData || [])
             setInventory(invData || [])
 
-            const cats: string[] = [...new Set(menuData.map((m: MenuItem) => m.category))].sort()
+            const cats = [...new Set(menuData.map((m: MenuItem) => m.category))].sort()
             setCategories(cats.length > 0 ? cats : ['Starters', 'Mains', 'Kottu', 'Rice', 'Beverages'])
             if (cats.length > 0) setCategory(cats[0])
-
-        } catch (err) {
+        } catch {
             toast.error('Failed to load data')
         } finally {
             setLoading(false)
+        }
+    }
+
+    // CLOUDINARY DIRECT UPLOAD
+    const uploadToCloudinary = async (file: File): Promise<string> => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET)
+        formData.append('folder', 'restrosync/menu')
+
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+            method: 'POST',
+            body: formData
+        })
+
+        if (!res.ok) throw new Error('Upload failed')
+        const data = await res.json()
+        return data.secure_url
+    }
+
+    const handleSubmit = async () => {
+        if (!name.trim()) return toast.error('Enter dish name')
+        if (!category) return toast.error('Select category')
+        if (sizes.every(s => s.price <= 0)) return toast.error('Set at least one price')
+
+        setUploading(true)
+
+        let imageUrl = previewUrl || ''
+
+        if (mediaFile) {
+            try {
+                imageUrl = await uploadToCloudinary(mediaFile)
+                console.log('✅ Image uploaded to Cloudinary:', imageUrl)
+                toast.success('Image uploaded to Cloudinary!')
+            } catch (err) {
+                console.error('❌ Cloudinary upload failed:', err)
+                toast.error('Image upload failed')
+                setUploading(false)
+                return
+            }
+        }
+
+        const payload = {
+            name: name.trim(),
+            category: category.trim(),
+            sizes: sizes.filter(s => s.name && s.name.trim() && s.price > 0).map(s => ({
+                name: s.name.trim(),
+                price: Number(s.price)
+            })),
+            recipe: recipe || [],
+            extras: extras || [],
+            mediaUrl: imageUrl || previewUrl || null,
+            available: true
+        }
+
+        console.log('📤 Sending payload to backend:', payload)
+        console.log('🔗 API URL:', editingId ? getApiUrl(`/menu/json/${editingId}`) : getApiUrl('/menu/json'))
+
+        try {
+            const url = editingId ? getApiUrl(`/menu/json/${editingId}`) : getApiUrl('/menu/json')
+            const res = await fetch(url, {
+                method: editingId ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+
+            console.log('📥 Backend response status:', res.status)
+
+            const responseData = await res.json()
+            console.log('📥 Backend response data:', responseData)
+
+            if (!res.ok) {
+                console.error('❌ Backend returned error:', responseData)
+                throw new Error(responseData.message || 'Save failed')
+            }
+
+            console.log('✅ Menu item saved successfully!')
+            toast.success(editingId ? 'Updated!' : 'Added!')
+            resetForm()
+            fetchAllData()
+        } catch (err: any) {
+            console.error('❌ Save failed:', err)
+            toast.error(err.message || 'Failed to save menu item')
+        } finally {
+            setUploading(false)
+        }
+    }
+
+    const handleEdit = (item: MenuItem) => {
+        setEditingId(item.id)
+        setName(item.name)
+        setCategory(item.category)
+        setSizes(item.sizes.length > 0 ? item.sizes : [{ name: 'Small', price: 0 }, { name: 'Regular', price: 0 }, { name: 'Large', price: 0 }])
+        setRecipe(item.recipe || [])
+        setExtras(item.extras || [])
+        setPreviewUrl(item.mediaUrl || null)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+
+    const handleDelete = async (id: string, name: string) => {
+        if (!confirm(`Delete "${name}" permanently?`)) return
+        try {
+            const res = await fetch(getApiUrl(`/menu/${id}`), { method: 'DELETE' })
+            if (!res.ok) throw new Error()
+            toast.success('Deleted')
+            fetchAllData()
+        } catch {
+            toast.error('Delete failed')
         }
     }
 
@@ -154,81 +266,10 @@ const MenuManager = () => {
         toast.success(`Extra "${newExtraName}" added`)
     }
 
-    // FINAL WORKING SUBMIT (ADD OR UPDATE)
-    const handleSubmit = async () => {
-        if (!name.trim()) return toast.error('Enter dish name')
-        if (!category) return toast.error('Select category')
-        if (sizes.every(s => s.price <= 0)) return toast.error('Set at least one price')
-
-        setUploading(true)
-
-        const formData = new FormData()
-        formData.append('name', name.trim())
-        formData.append('category', category)
-        formData.append('sizes', JSON.stringify(sizes.filter(s => s.price > 0)))
-        formData.append('recipe', JSON.stringify(recipe))
-        formData.append('extras', JSON.stringify(extras))
-        if (mediaFile) formData.append('media', mediaFile)
-
-        try {
-            const url = editingId
-                ? `http://localhost:8080/api/menu/${editingId}`
-                : 'http://localhost:8080/api/menu'
-
-            const res = await fetch(url, {
-                method: editingId ? 'PUT' : 'POST',
-                body: formData
-            })
-
-            if (!res.ok) {
-                const err = await res.text()
-                throw new Error(err || 'Save failed')
-            }
-
-            toast.success(editingId ? 'MENU ITEM UPDATED!' : 'MENU ITEM ADDED SUCCESSFULLY!', { duration: 4000 })
-            resetForm()
-            fetchAllData()
-        } catch (err: any) {
-            toast.error(err.message || 'Failed to save')
-        } finally {
-            setUploading(false)
-        }
-    }
-
-    const handleEdit = (item: MenuItem) => {
-        setEditingId(item.id)
-        setName(item.name)
-        setCategory(item.category)
-        setSizes(item.sizes.length > 0 ? item.sizes : [{ name: 'Small', price: 0 }, { name: 'Regular', price: 0 }, { name: 'Large', price: 0 }])
-        setRecipe(item.recipe || [])
-        setExtras(item.extras || [])
-        if (item.mediaUrl) {
-            setPreviewUrl(item.mediaUrl)
-        }
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-        toast.success(`Editing: ${item.name}`)
-    }
-
-    const handleDelete = async (id: string, name: string) => {
-        if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
-
-        try {
-            const res = await fetch(`http://localhost:8080/api/menu/${id}`, {
-                method: 'DELETE'
-            })
-
-            if (!res.ok) throw new Error('Delete failed')
-
-            toast.success(`${name} deleted`)
-            fetchAllData()
-        } catch (err: any) {
-            toast.error(err.message || 'Failed to delete')
-        }
-    }
-
     const resetForm = () => {
         setEditingId(null)
         setName('')
+        setCategory('')
         setSizes([{ name: 'Small', price: 0 }, { name: 'Regular', price: 0 }, { name: 'Large', price: 0 }])
         setRecipe([])
         setExtras([])
@@ -239,7 +280,8 @@ const MenuManager = () => {
         setPreviewUrl(null)
     }
 
-    const sortSizes = (arr: Size[]) => [...arr].sort((a, b) => ['Small', 'Regular', 'Large'].indexOf(a.name) - ['Small', 'Regular', 'Large'].indexOf(b.name))
+    const sortSizes = (arr: Size[]) => [...arr].sort((a, b) =>
+        ['Small', 'Regular', 'Large'].indexOf(a.name) - ['Small', 'Regular', 'Large'].indexOf(b.name))
 
     if (loading) return (
         <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center">
@@ -252,9 +294,7 @@ const MenuManager = () => {
             <Toaster position="top-center" />
             <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-black font-extrabold text-brand">
-                        PRO MENU MANAGER
-                    </h1>
+                    <h1 className="text-4xl font-black font-extrabold text-brand">PRO MENU MANAGER</h1>
                     <p className="text-lg mt-2 text-gray-300">Recipe • Extras • Sizes • Image • Inventory Sync</p>
                     {editingId && (
                         <div className="mt-4 flex items-center justify-center gap-3">
@@ -353,7 +393,7 @@ const MenuManager = () => {
                             <div className="bg-white/10 rounded-xl p-5">
                                 <h3 className="text-lg font-bold text-green-400 mb-4">Recipe (Auto Deduct)</h3>
                                 <div className="space-y-3">
-                                    <div className="flex gap-y-2">
+                                    <div className="flex flex-col gap-y-2">
                                         <select
                                             value={newIngredientId}
                                             onChange={e => setNewIngredientId(e.target.value)}
@@ -364,7 +404,7 @@ const MenuManager = () => {
                                                 <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>
                                             ))}
                                         </select>
-                                        <div className="grid grid-cols-3 gap-4 mt-4">
+                                        <div className="grid grid-cols-3 gap-4 mt-2">
                                             {sizes.map(s => (
                                                 <div key={s.name}>
                                                     <label className="text-sm text-gray-300">{s.name}</label>
@@ -388,7 +428,7 @@ const MenuManager = () => {
                                     </div>
 
                                     {recipe.map((r, i) => (
-                                        <div key={i} className="bg-white/5 rounded-xl p-5 rounded-xl">
+                                        <div key={i} className="bg-white/5 rounded-xl p-5">
                                             <div className="flex justify-between items-center mb-3">
                                                 <span className="font-bold text-lg">{r.ingredientName}</span>
                                                 <button onClick={() => setRecipe(p => p.filter((_, j) => j !== i))} className="text-red-400">
@@ -429,9 +469,7 @@ const MenuManager = () => {
                                         {inventory.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
                                     </select>
                                 </div>
-                                <button onClick={addExtra} className="w-full mt-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg font-bold text-sm">
-                                    + Add Extra
-                                </button>
+                                <button onClick={addExtra} className="w-full mt-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg font-bold text-sm">+ Add Extra</button>
 
                                 {extras.map((e, i) => (
                                     <div key={i} className="mt-4 p-4 bg-white/10 rounded-xl flex justify-between items-center">
