@@ -251,17 +251,17 @@ const MenuManager = () => {
         <>
             <Toaster position="top-center" />
             <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
-                <div className="text-center mb-12">
-                    <h1 className="text-7xl font-black font-extrabold text-brand">
+                <div className="text-center mb-8">
+                    <h1 className="text-4xl font-black font-extrabold text-brand">
                         PRO MENU MANAGER
                     </h1>
-                    <p className="text-3xl mt-4 text-gray-300">Recipe • Extras • Sizes • Image • Inventory Sync</p>
+                    <p className="text-lg mt-2 text-gray-300">Recipe • Extras • Sizes • Image • Inventory Sync</p>
                     {editingId && (
-                        <div className="mt-6 flex items-center justify-center gap-4">
-                            <p className="text-2xl text-orange-400 font-bold">Editing Mode</p>
+                        <div className="mt-4 flex items-center justify-center gap-3">
+                            <p className="text-lg text-orange-400 font-bold">Editing Mode</p>
                             <button
                                 onClick={resetForm}
-                                className="px-6 py-3 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-xl font-semibold"
+                                className="px-4 py-2 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-lg font-semibold text-sm"
                             >
                                 Cancel Edit
                             </button>
@@ -273,23 +273,23 @@ const MenuManager = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="max-w-7xl mx-auto bg-white/10 backdrop-blur-3xl rounded-3xl p-10 shadow-4xl border border-brand"
+                    className="max-w-7xl mx-auto bg-white/10 backdrop-blur-3xl rounded-2xl p-6 shadow-4xl border border-brand"
                 >
-                    <div className="grid lg:grid-cols-2 gap-12">
+                    <div className="grid lg:grid-cols-2 gap-8">
                         {/* LEFT */}
-                        <div className="space-y-8">
+                        <div className="space-y-5">
                             <input
                                 placeholder="Dish Name (e.g. Chicken Kottu)"
                                 value={name}
                                 onChange={e => setName(e.target.value)}
-                                className="w-full px-8 py-6 text-3xl rounded-2xl bg-white/20 border border-white/30 focus:border-cyan-400 outline-none"
+                                className="w-full px-4 py-3 text-lg rounded-xl bg-white/20 border border-white/30 focus:border-cyan-400 outline-none"
                             />
 
-                            <div className="flex gap-4">
+                            <div className="flex gap-3">
                                 <select
                                     value={category}
                                     onChange={e => setCategory(e.target.value)}
-                                    className="flex-1 px-6 py-5 text-xl rounded-2xl bg-white/20"
+                                    className="flex-1 px-4 py-3 text-base rounded-xl bg-white/20"
                                 >
                                     <option value="">Select Category</option>
                                     {categories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -298,7 +298,7 @@ const MenuManager = () => {
                                     placeholder="+ New"
                                     value={newCategory}
                                     onChange={e => setNewCategory(e.target.value)}
-                                    className="w-48 px-6 py-5 rounded-2xl bg-white/10"
+                                    className="w-40 px-4 py-3 rounded-xl bg-white/10"
                                 />
                                 <button
                                     onClick={() => {
@@ -310,54 +310,54 @@ const MenuManager = () => {
                                         setNewCategory('')
                                         toast.success(`Category "${c}" added`)
                                     }}
-                                    className="px-8 py-5 bg-emerald-600 hover:bg-emerald-700 rounded-2xl font-bold"
+                                    className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-xl font-bold text-sm"
                                 >
                                     Add
                                 </button>
                             </div>
 
                             {/* SIZES */}
-                            <div className="bg-white/10 rounded-3xl p-8">
-                                <h3 className="text-2xl font-bold text-cyan-300 mb-6">Sizes & Prices</h3>
+                            <div className="bg-white/10 rounded-xl p-5">
+                                <h3 className="text-lg font-bold text-cyan-300 mb-4">Sizes & Prices</h3>
                                 {sizes.map((s, i) => (
-                                    <div key={i} className="flex gap-4 mb-4 items-center">
+                                    <div key={i} className="flex gap-3 mb-3 items-center">
                                         <input
                                             value={s.name}
                                             onChange={e => setSizes(p => p.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
-                                            className="w-48 px-5 py-4 rounded-xl bg-white/20"
+                                            className="w-40 px-3 py-2 rounded-lg bg-white/20 text-sm"
                                         />
                                         <input
                                             type="number"
                                             value={s.price || ''}
                                             onChange={e => setSizes(p => p.map((x, j) => j === i ? { ...x, price: Number(e.target.value) } : x))}
                                             placeholder="Price"
-                                            className="w-40 px-5 py-4 rounded-xl bg-white/20"
+                                            className="w-32 px-3 py-2 rounded-lg bg-white/20 text-sm"
                                         />
                                         <button
                                             onClick={() => setSizes(p => p.filter((_, j) => j !== i))}
-                                            className="p-4 bg-red-600 hover:bg-red-700 rounded-xl"
+                                            className="p-2 bg-red-600 hover:bg-red-700 rounded-lg"
                                         >
-                                            <Trash2 className="w-6 h-6" />
+                                            <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
                                 ))}
                                 <button
                                     onClick={() => setSizes(p => [...p, { name: `Size ${p.length + 1}`, price: 0 }])}
-                                    className="mt-4 px-6 py-3 bg-cyan-600 hover:bg-cyan-700 rounded-xl font-bold"
+                                    className="mt-3 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg font-bold text-sm"
                                 >
                                     + Add Size
                                 </button>
                             </div>
 
                             {/* RECIPE */}
-                            <div className="bg-white/10 rounded-3xl p-8">
-                                <h3 className="text-2xl font-bold text-green-400 mb-6">Recipe (Auto Deduct)</h3>
-                                <div className="space-y-4">
+                            <div className="bg-white/10 rounded-xl p-5">
+                                <h3 className="text-lg font-bold text-green-400 mb-4">Recipe (Auto Deduct)</h3>
+                                <div className="space-y-3">
                                     <div className="flex gap-y-2">
                                         <select
                                             value={newIngredientId}
                                             onChange={e => setNewIngredientId(e.target.value)}
-                                            className="w-full px-6 py-4 rounded-xl bg-white/20"
+                                            className="w-full px-4 py-2 rounded-lg bg-white/20 text-sm"
                                         >
                                             <option value="">Select Ingredient</option>
                                             {inventory.map(i => (
@@ -381,7 +381,7 @@ const MenuManager = () => {
                                         </div>
                                         <button
                                             onClick={addRecipeItem}
-                                            className="mt-4 w-full py-4 bg-green-600 hover:bg-green-700 rounded-xl font-bold"
+                                            className="mt-3 w-full py-2 bg-green-600 hover:bg-green-700 rounded-lg font-bold text-sm"
                                         >
                                             + Add to Recipe
                                         </button>
@@ -418,18 +418,18 @@ const MenuManager = () => {
                             </div>
 
                             {/* EXTRAS */}
-                            <div className="bg-white/10 rounded-3xl p-8">
-                                <h3 className="text-2xl font-bold text-orange-400 mb-6">Extras</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <input placeholder="Name" value={newExtraName} onChange={e => setNewExtraName(e.target.value)} className="px-5 py-4 rounded-xl bg-white/20" />
-                                    <input type="number" placeholder="Price (+Rs)" value={newExtraPrice} onChange={e => setNewExtraPrice(e.target.value)} className="px-5 py-4 rounded-xl bg-white/20" />
-                                    <input type="number" step="0.01" placeholder="Qty per unit" value={newExtraQty} onChange={e => setNewExtraQty(e.target.value)} className="px-5 py-4 rounded-xl bg-white/20" />
-                                    <select value={newExtraIngredientId} onChange={e => setNewExtraIngredientId(e.target.value)} className="px-5 py-4 rounded-xl bg-white/20">
+                            <div className="bg-white/10 rounded-xl p-5">
+                                <h3 className="text-lg font-bold text-orange-400 mb-4">Extras</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input placeholder="Name" value={newExtraName} onChange={e => setNewExtraName(e.target.value)} className="px-3 py-2 rounded-lg bg-white/20 text-sm" />
+                                    <input type="number" placeholder="Price (+Rs)" value={newExtraPrice} onChange={e => setNewExtraPrice(e.target.value)} className="px-3 py-2 rounded-lg bg-white/20 text-sm" />
+                                    <input type="number" step="0.01" placeholder="Qty per unit" value={newExtraQty} onChange={e => setNewExtraQty(e.target.value)} className="px-3 py-2 rounded-lg bg-white/20 text-sm" />
+                                    <select value={newExtraIngredientId} onChange={e => setNewExtraIngredientId(e.target.value)} className="px-3 py-2 rounded-lg bg-white/20 text-sm">
                                         <option value="">Link Ingredient</option>
                                         {inventory.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
                                     </select>
                                 </div>
-                                <button onClick={addExtra} className="w-full mt-6 py-4 bg-orange-600 hover:bg-orange-700 rounded-xl font-bold">
+                                <button onClick={addExtra} className="w-full mt-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg font-bold text-sm">
                                     + Add Extra
                                 </button>
 
@@ -449,13 +449,13 @@ const MenuManager = () => {
                         {/* RIGHT - IMAGE */}
                         <div className="flex flex-col items-center">
                             <label className="cursor-pointer w-full">
-                                <div className="border-4 border-dashed border-brand rounded-3xl h-96 flex items-center justify-center bg-white/5 hover:bg-white/10 transition">
+                                <div className="border-2 border-dashed border-brand rounded-xl h-80 flex items-center justify-center bg-white/5 hover:bg-white/10 transition">
                                     {previewUrl ? (
                                         <img src={previewUrl} alt="Preview" className="max-h-full rounded-2xl" />
                                     ) : (
                                         <div className="text-center">
-                                            <Camera className="w-28 h-28 text-brand mb-4" />
-                                            <p className="text-xl text-gray-400">Click to upload image</p>
+                                            <Camera className="w-16 h-16 text-brand mb-3" />
+                                            <p className="text-base text-gray-400">Click to upload image</p>
                                         </div>
                                     )}
                                 </div>
@@ -475,11 +475,11 @@ const MenuManager = () => {
                         </div>
                     </div>
 
-                    <div className="text-center mt-12 flex gap-6 justify-center">
+                    <div className="text-center mt-6 flex gap-4 justify-center">
                         {editingId && (
                             <button
                                 onClick={resetForm}
-                                className="px-16 py-8 text-3xl font-bold bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-full shadow-2xl"
+                                className="px-8 py-3 text-base font-bold bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-xl shadow-lg"
                             >
                                 CANCEL
                             </button>
@@ -487,7 +487,7 @@ const MenuManager = () => {
                         <button
                             onClick={handleSubmit}
                             disabled={uploading}
-                            className="px-32 py-8 text-5xl font-extrabold bg-brand text-white rounded-full shadow-2xl transform hover:scale-105 disabled:opacity-60"
+                            className="px-12 py-3 text-lg font-bold bg-brand text-white rounded-xl shadow-lg transform hover:scale-105 disabled:opacity-60"
                         >
                             {uploading ? 'SAVING...' : editingId ? 'UPDATE ITEM' : 'ADD MENU ITEM'}
                         </button>
@@ -495,8 +495,8 @@ const MenuManager = () => {
                 </motion.div>
 
                 {/* CURRENT MENU */}
-                <div className="max-w-7xl mx-auto mt-20">
-                    <h2 className="text-6xl font-bold text-center mb-12 text-cyan-300">
+                <div className="max-w-7xl mx-auto mt-12">
+                    <h2 className="text-3xl font-bold text-center mb-8 text-cyan-300">
                         Current Menu ({menu.length} items)
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
