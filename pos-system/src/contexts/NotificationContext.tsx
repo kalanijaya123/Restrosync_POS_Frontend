@@ -70,7 +70,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             try {
                 const res = await fetch('http://localhost:8080/api/orders/recent')
                 if (res.ok) {
-                    const data = await res.json()
+                    await res.json()
                     // Check if there are new orders and add notification
                     // This is a simple example - implement proper logic based on your needs
                 }

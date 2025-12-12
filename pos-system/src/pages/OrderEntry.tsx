@@ -1,8 +1,8 @@
 // src/pages/OrderEntry.tsx
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast, { Toaster } from 'react-hot-toast'
-import { Plus, Minus, ShoppingCart, Search, ArrowLeft, Package, User, Phone, X } from 'lucide-react'
+import { Plus, Minus, ShoppingCart, ArrowLeft, Package, User, X } from 'lucide-react'
 
 interface Size { name: string; price: number }
 interface ExtraItem { id: string; name: string; price: number; quantityPerUnit: number; ingredientId: string }
@@ -204,7 +204,7 @@ const OrderEntry = () => {
 
             if (!res.ok) throw new Error(await res.text())
 
-            const createdOrder = await res.json()
+            await res.json()
             toast.success(`Order created for ${fullName}! Proceeding to payment...`, { duration: 2000 })
             setCart([])
             setShowCustomerModal(false)

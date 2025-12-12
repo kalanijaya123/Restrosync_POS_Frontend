@@ -43,14 +43,6 @@ const TableLayout = () => {
         },
     })
 
-    const clearTable = useMutation({
-        mutationFn: (tableId: string) => api.put(`/tables/${tableId}/clear`),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['tables'] })
-            toast.success('Table freed!')
-        }
-    })
-
     const deleteTable = useMutation({
         mutationFn: (id: string) => api.delete(`/tables/${id}`),
         onSuccess: () => {

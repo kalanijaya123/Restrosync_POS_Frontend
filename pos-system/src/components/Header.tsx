@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Bell, Moon, Sun, X } from 'lucide-react'
+import { LogOut, Bell, Moon, Sun } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { useNotifications } from '../contexts/NotificationContext'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -127,9 +127,9 @@ const Header = () => {
                                             >
                                                 <div className="flex justify-between items-start mb-1">
                                                     <span className={`text-xs font-semibold uppercase ${notif.type === 'order' ? 'text-green-600' :
-                                                            notif.type === 'kitchen' ? 'text-orange-600' :
-                                                                notif.type === 'payment' ? 'text-blue-600' :
-                                                                    'text-gray-600'
+                                                        notif.type === 'kitchen' ? 'text-orange-600' :
+                                                            notif.type === 'payment' ? 'text-blue-600' :
+                                                                'text-gray-600'
                                                         }`}>
                                                         {notif.type}
                                                     </span>

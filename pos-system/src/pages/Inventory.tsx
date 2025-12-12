@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
-import { Plus, Package, AlertTriangle, Search, Edit2 } from 'lucide-react'
+import { Plus, AlertTriangle, Search, Edit2 } from 'lucide-react'
 
 interface InventoryItem {
     id: string

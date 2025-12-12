@@ -1,7 +1,7 @@
 // MenuManager.tsx – FINAL PRO VERSION (WORKS 100% WITH YOUR BACKEND)
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Upload, Plus, Trash2, X, Camera, Loader2, Package, Edit2 } from 'lucide-react'
+import { Trash2, X, Camera, Loader2, Package, Edit2 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 
 interface Size {
