@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
-import { Plus, Package, AlertTriangle, Search, Edit2 } from 'lucide-react'
+import { Plus, AlertTriangle, Search, Edit2 } from 'lucide-react'
+import { getApiUrl } from '../services/api'
 
 interface InventoryItem {
     id: string
@@ -26,7 +27,7 @@ const InventoryDashboard = () => {
 
     const fetchInventory = async () => {
         try {
-            const res = await fetch('http://localhost:8080/api/inventory')
+            const res = await fetch(getApiUrl('/inventory'))
             const data = await res.json()
             setItems(data)
         } catch (err) {
@@ -46,8 +47,8 @@ const InventoryDashboard = () => {
         try {
             const method = editing ? 'PUT' : 'POST'
             const url = editing
-                ? `http://localhost:8080/api/inventory/${editing.id}`
-                : 'http://localhost:8080/api/inventory'
+                ? getApiUrl(`/inventory/${editing.id}`)
+                : getApiUrl('/inventory')
 
             await fetch(url, {
                 method,
@@ -68,7 +69,7 @@ const InventoryDashboard = () => {
         const amount = prompt('Add how much stock? (e.g., 10)')
         if (!amount || isNaN(+amount)) return
 
-        await fetch(`http://localhost:8080/api/inventory/${id}/add`, {
+        await fetch(getApiUrl(`/inventory/${id}/add`), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ amount: parseFloat(amount) })
@@ -84,12 +85,12 @@ const InventoryDashboard = () => {
     return (
         <>
             <Toaster position="top-center" />
-            <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-black text-white p-8">
+            <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
                 <div className="max-w-7xl mx-auto">
 
                     <div className="flex justify-between items-center mb-10">
                         <div>
-                            <h1 className="text-5xl font-extrabold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                            <h1 className="text-5xl font-extrabold text-brand">
                                 Inventory Control
                             </h1>
                             <p className="text-gray-400 mt-2">Owner/Manager Only</p>
@@ -100,7 +101,7 @@ const InventoryDashboard = () => {
                                 setForm({ name: '', unit: 'kg', lowStockAlert: 5, category: 'Vegetables' })
                                 setShowModal(true)
                             }}
-                            className="flex items-center gap-3 px-8 py-5 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold text-xl shadow-2xl hover:scale-105 transition"
+                            className="flex items-center gap-3 px-8 py-5 bg-brand rounded-2xl font-bold text-xl shadow-2xl hover:scale-105 transition text-white"
                         >
                             <Plus className="w-8 h-8" /> Add Ingredient
                         </button>
@@ -123,7 +124,7 @@ const InventoryDashboard = () => {
                         {filtered.map(item => {
                             const isLow = item.currentStock <= item.lowStockAlert
                             return (
-                                <div key={item.id} className={`rounded-3xl p-8 border-4 transition-all shadow-2xl ${isLow ? 'bg-red-900/50 border-red-500 shadow-red-500/40 animate-pulse' : 'bg-white/10 border-white/20'}`}>
+                                <div key={item.id} className={`rounded-3xl p-8 border-4 transition-all shadow-2xl ${isLow ? 'bg-red-900/50 border-red-500 shadow-red-500/40 animate-pulse' : 'bg-white/10 border-brand'}`}>
                                     <div className="flex justify-between items-start mb-6">
                                         <div>
                                             <h3 className="text-3xl font-bold text-cyan-300">{item.name}</h3>
@@ -174,7 +175,7 @@ const InventoryDashboard = () => {
             {/* MODAL */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-50">
-                    <div className="bg-gradient-to-br from-purple-900/80 to-black p-12 rounded-3xl border-4 border-purple-600 shadow-2xl w-full max-w-2xl">
+                    <div className="bg-brand p-12 rounded-3xl border-4 border-brand shadow-2xl w-full max-w-2xl">
                         <h2 className="text-4xl font-bold text-cyan-300 text-center mb-10">
                             {editing ? 'Edit' : 'New'} Ingredient
                         </h2>
@@ -184,11 +185,11 @@ const InventoryDashboard = () => {
                                 placeholder="Ingredient Name"
                                 value={form.name}
                                 onChange={e => setForm({ ...form, name: e.target.value })}
-                                className="w-full px-8 py-6 bg-white/10 border border-purple-500 rounded-2xl text-2xl"
+                                className="w-full px-8 py-6 bg-white/10 border border-brand rounded-2xl text-2xl"
                             />
                             <div className="grid grid-cols-3 gap-6">
                                 <select value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })}
-                                    className="px-6 py-6 bg-white/10 border border-purple-500 rounded-2xl text-xl">
+                                    className="px-6 py-6 bg-white/10 border border-brand rounded-2xl text-xl">
                                     <option>kg</option><option>gram</option><option>liter</option><option>piece</option><option>packet</option>
                                 </select>
                                 <input type="number" placeholder="Low Alert" value={form.lowStockAlert}
@@ -202,11 +203,11 @@ const InventoryDashboard = () => {
                         </div>
                         <div className="flex gap-6 mt-10">
                             <button onClick={saveItem}
-                                className="flex-1 py-6 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold text-2xl shadow-xl hover:scale-105 transition">
+                                className="flex-1 py-6 bg-brand rounded-2xl font-bold text-2xl shadow-xl hover:scale-105 transition text-white">
                                 {editing ? 'UPDATE' : 'ADD'}
                             </button>
                             <button onClick={() => setShowModal(false)}
-                                className="flex-1 py-6 bg-gray-700 rounded-2xl font-bold text-2xl hover:bg-gray-600 transition">
+                                className="flex-1 py-6 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-2xl font-bold text-2xl transition">
                                 Cancel
                             </button>
                         </div>

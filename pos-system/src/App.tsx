@@ -1,5 +1,7 @@
-import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { NotificationProvider } from './contexts/NotificationContext'
+import { Toaster } from 'react-hot-toast'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -18,31 +20,36 @@ import MenuManager from './pages/MenuManager'
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/*" element={
-          <Layout>
-            <Routes>
-              <Route path="/dashboard" element={<Dashboard />} />
-              {<Route path="/tables" element={<TableLayout />} />}
-              {<Route path="/orders" element={<OrderEntry />} />}
-              {<Route path="/orders/:tableId" element={<OrderEntry />} />}
-              {<Route path="/summary" element={<OrderSummary />} />}
-              {<Route path="/payment" element={<Payment />} />}
-              {<Route path="/history" element={<OrderHistory />} />}
-              {<Route path="/manager" element={<ManagerDashboard />} />}
-              {<Route path="/inventory" element={<Inventory />} />}
-              {<Route path="/status" element={<KitchenStatus />} />}
-              {<Route path="/third-party" element={<ThirdPartyOrders />} />}
-              {<Route path="/settings" element={<Settings />} />}
-              {<Route path="/menu-manager" element={<MenuManager />} />}
-            </Routes>
-          </Layout>
-        } />
-      </Routes>
-    </Router>
+    <ThemeProvider>
+      <NotificationProvider>
+        <Toaster position="top-right" />
+        <Router>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/*" element={
+              <Layout>
+                <Routes>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  {<Route path="/tables" element={<TableLayout />} />}
+                  {<Route path="/orders" element={<OrderEntry />} />}
+                  {<Route path="/orders/:tableId" element={<OrderEntry />} />}
+                  {<Route path="/summary" element={<OrderSummary />} />}
+                  {<Route path="/payment" element={<Payment />} />}
+                  {<Route path="/history" element={<OrderHistory />} />}
+                  {<Route path="/manager" element={<ManagerDashboard />} />}
+                  {<Route path="/inventory" element={<Inventory />} />}
+                  {<Route path="/status" element={<KitchenStatus />} />}
+                  {<Route path="/third-party" element={<ThirdPartyOrders />} />}
+                  {<Route path="/settings" element={<Settings />} />}
+                  {<Route path="/menu-manager" element={<MenuManager />} />}
+                </Routes>
+              </Layout>
+            } />
+          </Routes>
+        </Router>
+      </NotificationProvider>
+    </ThemeProvider>
   )
 }
 

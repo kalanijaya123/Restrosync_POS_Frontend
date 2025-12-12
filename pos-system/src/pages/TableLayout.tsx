@@ -13,6 +13,7 @@ interface Table {
     currentOrderId?: string | null
     x: number
     y: number
+    reservedSeats?: number
 }
 
 const TableLayout = () => {
@@ -40,20 +41,6 @@ const TableLayout = () => {
             queryClient.invalidateQueries({ queryKey: ['tables'] })
             toast.success('Layout saved!')
         },
-    })
-
-    const reserveTable = useMutation({
-        mutationFn: (tableId: string) =>
-            api.put(`/tables/${tableId}/occupy`, { orderId: 'pending' }),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tables'] })
-    })
-
-    const clearTable = useMutation({
-        mutationFn: (tableId: string) => api.put(`/tables/${tableId}/clear`),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['tables'] })
-            toast.success('Table freed!')
-        }
     })
 
     const deleteTable = useMutation({
@@ -84,20 +71,161 @@ const TableLayout = () => {
     }
 
     const handleTableClick = async (table: Table) => {
-        if (table.status === 'occupied') {
-            if (confirm(`Free Table ${table.number}?`)) {
-                clearTable.mutate(table.id)
-            }
+        const reservedSeats = table.reservedSeats || 0
+
+        // If table has reserved seats, show info toast and ask to free or reserve
+        if (reservedSeats > 0) {
+            toast((t) => (
+                <div className="flex flex-col gap-3">
+                    <p className="font-bold text-lg">Table {table.number}</p>
+                    <p>{reservedSeats} seat(s) currently reserved</p>
+                    <div className="flex gap-2 mt-2">
+                        <button
+                            onClick={() => {
+                                toast.dismiss(t.id)
+                                handleFreeSeat(table, reservedSeats)
+                            }}
+                            className="px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600"
+                        >
+                            Free Seats
+                        </button>
+                        <button
+                            onClick={() => {
+                                toast.dismiss(t.id)
+                                handleReserveSeat(table, reservedSeats)
+                            }}
+                            className="px-4 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600"
+                        >
+                            Reserve More
+                        </button>
+                        <button
+                            onClick={() => toast.dismiss(t.id)}
+                            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            ), { duration: 10000 })
             return
         }
 
-        try {
-            await reserveTable.mutateAsync(table.id)
-            toast.success(`Table ${table.number} reserved!`)
-            navigate(`/orders/${table.id}`)
-        } catch {
-            toast.error('Failed to reserve table')
+        // If no reserved seats, directly reserve
+        handleReserveSeat(table, 0)
+    }
+
+    const handleFreeSeat = async (table: Table, reservedSeats: number) => {
+        toast((t) => (
+            <div className="flex flex-col gap-3">
+                <p className="font-bold">Free seats from Table {table.number}</p>
+                <p className="text-sm text-gray-600">Currently reserved: {reservedSeats}</p>
+                <input
+                    id={`free-input-${table.id}`}
+                    type="number"
+                    min="1"
+                    max={reservedSeats}
+                    placeholder="Number of seats"
+                    className="px-3 py-2 border rounded-lg"
+                />
+                <div className="flex gap-2">
+                    <button
+                        onClick={async () => {
+                            const input = document.getElementById(`free-input-${table.id}`) as HTMLInputElement
+                            const numSeats = parseInt(input?.value || '0')
+
+                            if (isNaN(numSeats) || numSeats <= 0) {
+                                toast.error('Please enter a valid number')
+                                return
+                            }
+
+                            if (numSeats > reservedSeats) {
+                                toast.error(`Only ${reservedSeats} seat(s) are reserved!`)
+                                return
+                            }
+
+                            try {
+                                await api.put(`/tables/${table.id}/free`, { seatsToFree: numSeats })
+                                queryClient.invalidateQueries({ queryKey: ['tables'] })
+                                toast.success(`${numSeats} seat(s) freed on Table ${table.number}!`)
+                                toast.dismiss(t.id)
+                            } catch (error) {
+                                toast.error('Failed to free seats')
+                            }
+                        }}
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600"
+                    >
+                        Confirm
+                    </button>
+                    <button
+                        onClick={() => toast.dismiss(t.id)}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        ), { duration: 15000 })
+    }
+
+    const handleReserveSeat = async (table: Table, reservedSeats: number) => {
+        const availableSeats = table.chairs - reservedSeats
+
+        if (availableSeats === 0) {
+            toast.error('Table is fully reserved!')
+            return
         }
+
+        toast((t) => (
+            <div className="flex flex-col gap-3">
+                <p className="font-bold">Reserve seats for Table {table.number}</p>
+                <p className="text-sm text-gray-600">Available: {availableSeats} seat(s)</p>
+                <input
+                    id={`reserve-input-${table.id}`}
+                    type="number"
+                    min="1"
+                    max={availableSeats}
+                    placeholder="Number of seats"
+                    className="px-3 py-2 border rounded-lg"
+                />
+                <div className="flex gap-2">
+                    <button
+                        onClick={async () => {
+                            const input = document.getElementById(`reserve-input-${table.id}`) as HTMLInputElement
+                            const numSeats = parseInt(input?.value || '0')
+
+                            if (isNaN(numSeats) || numSeats <= 0) {
+                                toast.error('Please enter a valid number')
+                                return
+                            }
+
+                            if (numSeats > availableSeats) {
+                                toast.error(`Only ${availableSeats} seats available!`)
+                                return
+                            }
+
+                            try {
+                                await api.put(`/tables/${table.id}/reserve`, { seatsToReserve: numSeats })
+                                queryClient.invalidateQueries({ queryKey: ['tables'] })
+                                toast.success(`${numSeats} seat(s) reserved on Table ${table.number}!`)
+                                toast.dismiss(t.id)
+                                navigate(`/orders/${table.id}`)
+                            } catch (error) {
+                                toast.error('Failed to reserve seats')
+                            }
+                        }}
+                        className="px-4 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600"
+                    >
+                        Confirm
+                    </button>
+                    <button
+                        onClick={() => toast.dismiss(t.id)}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        ), { duration: 15000 })
     }
 
     const handleDragStart = (e: React.DragEvent, id: string) => {
@@ -122,8 +250,8 @@ const TableLayout = () => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-purple-950 to-black flex items-center justify-center">
-                <div className="animate-spin rounded-full h-20 w-20 border-4 border-pink-500 border-t-transparent"></div>
+            <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-20 w-20 border-4 border-brand border-t-transparent"></div>
             </div>
         )
     }
@@ -132,27 +260,27 @@ const TableLayout = () => {
         <>
             <Toaster position="top-center" />
 
-            <div className="min-h-screen bg-gradient-to-br from-purple-950 via-indigo-950 to-black text-white p-8">
+            <div className="text-gray-900 dark:text-white p-8 transition-colors">
                 <div className="flex justify-between items-center mb-10">
                     <div>
-                        <h1 className="text-5xl font-extrabold bg-gradient-to-r from-pink-400 to-cyan-400 bg-clip-text text-transparent">
+                        <h1 className="text-5xl font-extrabold text-gray-900 dark:text-white">
                             Restaurant Floor Plan
                         </h1>
-                        <p className="text-purple-300 mt-3 text-lg">
-                            Green = Available | Red = Reserved (Click to Free) | Drag to Move
+                        <p className="text-brand mt-3 text-lg">
+                            Green = Available | Orange = Partially Reserved | Red = Fully Reserved | Click to Reserve/Free
                         </p>
                     </div>
 
                     <div className="flex gap-4">
                         <button
                             onClick={() => setIsAdding(true)}
-                            className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-xl font-bold text-xl shadow-2xl hover:scale-105 transition"
+                            className="flex items-center gap-3 px-8 py-4 bg-brand rounded-xl font-bold text-xl shadow-2xl hover:scale-105 transition text-white"
                         >
                             <Plus className="w-7 h-7" /> Add Table
                         </button>
                         <button
                             onClick={() => saveLayout.mutate(layout)}
-                            className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold text-xl shadow-2xl hover:scale-105 transition"
+                            className="flex items-center gap-3 px-8 py-4 bg-brand rounded-xl font-bold text-xl shadow-2xl hover:scale-105 transition text-white"
                         >
                             <Save className="w-7 h-7" /> Save Layout
                         </button>
@@ -160,14 +288,14 @@ const TableLayout = () => {
                 </div>
 
                 <div
-                    className="relative bg-black/40 backdrop-blur-xl rounded-3xl border-4 border-purple-700/50 shadow-2xl overflow-hidden h-[80vh]"
+                    className="relative bg-gray-50 dark:bg-slate-800/40 backdrop-blur-xl rounded-3xl border-2 border-gray-200 dark:border-slate-600 shadow-xl overflow-hidden h-[80vh]"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
                 >
-                    <div className="absolute inset-0 opacity-10">
+                    <div className="absolute inset-0 opacity-5 dark:opacity-10">
                         <div className="grid grid-cols-12 grid-rows-12 h-full">
                             {Array.from({ length: 144 }).map((_, i) => (
-                                <div key={i} className="border border-purple-600/30"></div>
+                                <div key={i} className="border border-gray-300 dark:border-brand/30"></div>
                             ))}
                         </div>
                     </div>
@@ -188,12 +316,14 @@ const TableLayout = () => {
                             <div
                                 onClick={() => handleTableClick(table)}
                                 className={`relative w-40 h-40 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all transform hover:scale-110 cursor-pointer
-                                    ${table.status === 'occupied'
-                                        ? 'bg-gradient-to-br from-red-600 to-pink-700 border-8 border-red-500/70'
-                                        : 'bg-gradient-to-br from-emerald-600 to-cyan-600 border-8 border-emerald-500/70'
+                                    ${(table.reservedSeats || 0) >= table.chairs
+                                        ? 'bg-red-600 border-8 border-red-500/70'
+                                        : (table.reservedSeats || 0) > 0
+                                            ? 'bg-orange-500 border-8 border-orange-400/70'
+                                            : 'bg-emerald-600 border-8 border-emerald-500/70'
                                     }`}
                             >
-                                {table.status === 'occupied' ? (
+                                {(table.reservedSeats || 0) >= table.chairs ? (
                                     <Lock className="absolute top-4 right-4 w-9 h-9 text-white/90" />
                                 ) : (
                                     <Unlock className="absolute top-4 right-4 w-7 h-7 text-white/60 opacity-0 group-hover:opacity-100 transition" />
@@ -205,10 +335,14 @@ const TableLayout = () => {
                                 </p>
                                 <div className="flex items-center gap-2 mt-2">
                                     <Users className="w-7 h-7" />
-                                    <span className="text-2xl font-bold">{table.chairs}</span>
+                                    <span className="text-2xl font-bold">{table.chairs - (table.reservedSeats || 0)}/{table.chairs}</span>
                                 </div>
                                 <p className="text-sm font-semibold mt-2">
-                                    {table.status === 'occupied' ? 'RESERVED' : 'FREE'}
+                                    {(table.reservedSeats || 0) >= table.chairs
+                                        ? 'FULLY RESERVED'
+                                        : (table.reservedSeats || 0) > 0
+                                            ? `${table.chairs - (table.reservedSeats || 0)} SEATS LEFT`
+                                            : 'AVAILABLE'}
                                 </p>
 
                                 <div
@@ -217,7 +351,7 @@ const TableLayout = () => {
                                 >
                                     <button
                                         onClick={() => setEditingTable(table)}
-                                        className="bg-purple-600 p-3.5 rounded-full shadow-2xl hover:bg-purple-500"
+                                        className="bg-brand p-3.5 rounded-full shadow-2xl hover:bg-brand"
                                     >
                                         <Edit2 className="w-6 h-6" />
                                     </button>
@@ -234,7 +368,7 @@ const TableLayout = () => {
 
                     {layout.length === 0 && (
                         <div className="flex items-center justify-center h-full">
-                            <p className="text-4xl text-purple-400 font-bold">Click "Add Table" to begin</p>
+                            <p className="text-4xl text-gray-400 dark:text-brand font-bold">Click "Add Table" to begin</p>
                         </div>
                     )}
                 </div>
@@ -243,8 +377,8 @@ const TableLayout = () => {
             {/* ADD / EDIT MODAL */}
             {(isAdding || editingTable) && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50">
-                    <div className="bg-gradient-to-br from-purple-900 to-black p-10 rounded-3xl shadow-2xl border border-purple-600 w-96">
-                        <h2 className="text-3xl font-bold text-cyan-300 mb-8 text-center">
+                    <div className="bg-white dark:bg-slate-800 p-10 rounded-3xl shadow-2xl border-2 border-gray-200 dark:border-slate-700 w-96">
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
                             {editingTable ? 'Edit Table' : 'Add New Table'}
                         </h2>
                         <input
@@ -256,7 +390,7 @@ const TableLayout = () => {
                                     ? setEditingTable({ ...editingTable, number: e.target.value })
                                     : setNewTable({ ...newTable, number: e.target.value })
                             }
-                            className="w-full px-6 py-5 bg-white/10 border border-purple-500 rounded-xl text-xl mb-6 placeholder-purple-400"
+                            className="w-full px-6 py-5 bg-white dark:bg-slate-700 border-2 border-gray-300 dark:border-slate-600 rounded-xl text-xl mb-6 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-brand focus:outline-none"
                         />
                         <select
                             value={editingTable ? editingTable.chairs : newTable.chairs}
@@ -265,7 +399,7 @@ const TableLayout = () => {
                                     ? setEditingTable({ ...editingTable, chairs: Number(e.target.value) })
                                     : setNewTable({ ...newTable, chairs: Number(e.target.value) })
                             }
-                            className="w-full px-6 py-5 bg-white/10 border border-purple-500 rounded-xl text-xl"
+                            className="w-full px-6 py-5 bg-white dark:bg-slate-700 border-2 border-gray-300 dark:border-slate-600 rounded-xl text-xl text-gray-900 dark:text-white focus:border-brand focus:outline-none"
                         >
                             {[2, 4, 6, 8, 10, 12].map(n => (
                                 <option key={n} value={n}>{n} Seats</option>
@@ -284,7 +418,7 @@ const TableLayout = () => {
                                         addTable()
                                     }
                                 }}
-                                className="flex-1 py-5 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-xl font-bold text-xl shadow-xl hover:scale-105 transition"
+                                className="flex-1 py-5 bg-brand rounded-xl font-bold text-xl shadow-xl hover:scale-105 transition text-white"
                             >
                                 {editingTable ? 'Update' : 'Add'} Table
                             </button>
@@ -293,7 +427,7 @@ const TableLayout = () => {
                                     setIsAdding(false)
                                     setEditingTable(null)
                                 }}
-                                className="flex-1 py-5 bg-gray-700 rounded-xl font-bold text-xl shadow-xl hover:bg-gray-600 transition"
+                                className="flex-1 py-5 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-xl font-bold text-xl shadow-xl transition"
                             >
                                 Cancel
                             </button>
