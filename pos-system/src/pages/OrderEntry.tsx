@@ -227,7 +227,7 @@ const OrderEntry = () => {
                 <div className="fixed inset-0 bg-black/70 dark:bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-6">
                     <div className="bg-white dark:bg-slate-800 rounded-3xl p-10 max-w-lg w-full border-2 border-gray-200 dark:border-slate-700 shadow-2xl">
                         <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-4xl font-bold text-cyan-400 flex items-center gap-4">
+                            <h2 className="text-4xl font-bold text-blue-300 flex items-center gap-4">
                                 <User className="w-12 h-12" /> Customer Info
                             </h2>
                             <button onClick={() => setShowCustomerModal(false)}>
@@ -241,7 +241,7 @@ const OrderEntry = () => {
                                 <div className="grid grid-cols-4 gap-4 mt-3">
                                     {(['Mr', 'Mrs', 'Miss', 'Dr'] as const).map(t => (
                                         <button key={t} onClick={() => setTitle(t)}
-                                            className={`py-4 rounded-xl text-xl font-bold ${title === t ? 'bg-cyan-600' : 'bg-white/10 hover:bg-white/20'}`}>
+                                            className={`py-4 rounded-xl text-xl font-bold text-white ${title === t ? 'bg-cyan-600' : 'bg-white/10 hover:bg-white/20'}`}>
                                             {t}.
                                         </button>
                                     ))}
@@ -264,7 +264,7 @@ const OrderEntry = () => {
                         </div>
 
                         <div className="flex gap-4 mt-10">
-                            <button onClick={() => setShowCustomerModal(false)} className="flex-1 py-5 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-xl font-bold text-xl">Cancel</button>
+                            <button onClick={() => setShowCustomerModal(false)} className="flex-1 py-5 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-bold text-xl">Cancel</button>
                             <button onClick={confirmOrder} className="flex-1 py-5 bg-brand rounded-xl font-bold text-xl shadow-xl">
                                 Confirm & Go to Payment
                             </button>
@@ -277,7 +277,7 @@ const OrderEntry = () => {
             {showExtrasModal && currentItemForExtras && (
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-40 flex items-center justify-center p-6">
                     <div className="bg-brand rounded-3xl p-8 max-w-lg w-full border border-brand shadow-2xl">
-                        <h2 className="text-4xl font-bold text-cyan-400 text-center mb-6">
+                        <h2 className="text-4xl font-bold text-blue-300 text-center mb-6">
                             {currentItemForExtras.item.name} ({currentItemForExtras.size.name})
                         </h2>
 
@@ -348,7 +348,7 @@ const OrderEntry = () => {
                                         </div>
                                     }
                                     <div className="p-4">
-                                        <h3 className="text-xl font-semibold text-cyan-300 text-center mb-4">{item.name}</h3>
+                                        <h3 className="text-xl font-semibold text-blue-300 text-center mb-4">{item.name}</h3>
                                         <div className="space-y-3">
                                             {(item.sizes || []).map(size => (
                                                 <button key={size.name}
@@ -370,7 +370,7 @@ const OrderEntry = () => {
                 {/* CART */}
                 <div className="w-80 bg-white dark:bg-slate-800 border-l-2 border-gray-200 dark:border-slate-700 p-6 flex flex-col">
                     <div className="flex items-center gap-4 mb-8">
-                        <ShoppingCart className="w-10 h-10 text-cyan-400" />
+                        <ShoppingCart className="w-10 h-10 text-blue-300" />
                         <h2 className="text-2xl font-bold">Cart ({cart.reduce((s, i) => s + i.qty, 0)})</h2>
                     </div>
 
@@ -384,11 +384,11 @@ const OrderEntry = () => {
                                             <p className="text-orange-300 text-sm">{item.sizeName}</p>
                                             {item.extras.map((e, ei) => <p key={ei} className="text-yellow-400 text-sm">• {e.name} ×{e.qty}</p>)}
                                         </div>
-                                        <p className="text-xl font-bold text-green-400">Rs {item.totalPrice * item.qty}</p>
+                                        <p className="text-xl font-bold text-green-300">Rs {item.totalPrice * item.qty}</p>
                                     </div>
                                     <div className="flex justify-center items-center gap-6 mt-6">
                                         <button onClick={() => updateQty(i, -1)} className="w-12 h-12 bg-red-600 rounded-full"><Minus className="w-6 h-6" /></button>
-                                        <span className="text-2xl font-extrabold text-cyan-300">{item.qty}</span>
+                                        <span className="text-2xl font-extrabold text-blue-300">{item.qty}</span>
                                         <button onClick={() => updateQty(i, 1)} className="w-12 h-12 bg-green-600 rounded-full"><Plus className="w-6 h-6" /></button>
                                     </div>
                                 </div>
@@ -398,7 +398,7 @@ const OrderEntry = () => {
                     <div className="border-t border-brand pt-4 mt-4">
                         <div className="flex justify-between mb-4">
                             <span className="text-lg font-bold">Total</span>
-                            <span className="text-2xl font-extrabold text-green-400">Rs {total}</span>
+                            <span className="text-2xl font-extrabold text-green-300">Rs {total}</span>
                         </div>
                         <button onClick={sendToKitchen} disabled={cart.length === 0}
                             className="w-full py-3 bg-brand rounded-xl font-semibold text-base shadow-md disabled:opacity-50">

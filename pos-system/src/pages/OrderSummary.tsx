@@ -10,6 +10,7 @@ interface OrderItem {
     quantity?: number
     price: number
     sizeName?: string
+    mediaUrl?: string
 }
 
 interface Order {
@@ -34,10 +35,24 @@ const OrderSummary = () => {
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [loading, setLoading] = useState(true)
+    const [menuItems, setMenuItems] = useState<any[]>([])
 
     useEffect(() => {
         fetchAllOrders()
+        fetchMenu()
     }, [])
+
+    const fetchMenu = async () => {
+        try {
+            const res = await fetch('http://localhost:8080/api/menu')
+            if (res.ok) {
+                const data = await res.json()
+                setMenuItems(Array.isArray(data) ? data : [])
+            }
+        } catch (err) {
+            console.error('Failed to load menu:', err)
+        }
+    }
 
     const fetchAllOrders = async () => {
         try {
@@ -86,6 +101,11 @@ const OrderSummary = () => {
         return eachDayOfInterval({ start, end })
     }
 
+    const getMenuItemImage = (itemName: string) => {
+        const menuItem = menuItems.find(m => m.name?.toLowerCase() === itemName?.toLowerCase())
+        return menuItem?.mediaUrl || null
+    }
+
     const getOrdersForDate = (date: Date) => {
         return orders.filter(order =>
             isSameDay(new Date(order.createdAt), date)
@@ -130,7 +150,7 @@ const OrderSummary = () => {
                                 setSelectedOrder(null)
                                 setSelectedDate(null)
                             }}
-                            className="mb-6 flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition"
+                            className="mb-6 flex items-center gap-2 text-blue-300 hover:text-blue-200 transition"
                         >
                             <ChevronLeft className="w-5 h-5" /> Back to Orders
                         </button>
@@ -141,7 +161,7 @@ const OrderSummary = () => {
                         <div className="bg-black/50 backdrop-blur-xl rounded-3xl border border-brand p-8 shadow-2xl">
                             <div className="flex justify-between items-start mb-8">
                                 <div>
-                                    <h2 className="text-3xl font-bold text-cyan-400">
+                                    <h2 className="text-3xl font-bold text-blue-300">
                                         {selectedOrder.kotToken || `Order #${selectedOrder.orderNo || selectedOrder.id.slice(-6).toUpperCase()}`}
                                     </h2>
                                     <div className="flex flex-wrap gap-4 mt-4 text-gray-300">
@@ -150,7 +170,7 @@ const OrderSummary = () => {
                                             <span>{format(new Date(selectedOrder.createdAt), 'dd MMM yyyy')}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Clock className="w-5 h-5 text-green-400" />
+                                            <Clock className="w-5 h-5 text-green-300" />
                                             <span>{format(new Date(selectedOrder.createdAt), 'hh:mm a')}</span>
                                         </div>
                                         {(selectedOrder.tableNumber || selectedOrder.tableId) && (
@@ -180,9 +200,9 @@ const OrderSummary = () => {
                                 </div>
                                 <div className="text-right">
                                     <p className="text-sm text-gray-400">Total Amount</p>
-                                    <p className="text-5xl font-extrabold text-green-400">Rs {selectedOrder.total}</p>
+                                    <p className="text-5xl font-extrabold text-green-300">Rs {selectedOrder.total}</p>
                                     <div className="mt-2 inline-block px-3 py-1 rounded-full text-sm font-semibold
-                                        ${selectedOrder.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                                        ${selectedOrder.status === 'completed' ? 'bg-green-500/20 text-green-300' :
                                             selectedOrder.status === 'preparing' ? 'bg-amber-500/20 text-amber-400' :
                                             selectedOrder.status === 'pending' ? 'bg-red-500/20 text-red-400' :
                                             'bg-gray-500/20 text-gray-400'}">
@@ -192,34 +212,45 @@ const OrderSummary = () => {
                             </div>
 
                             <div className="space-y-4">
-                                {selectedOrder.items.map((item, i) => (
-                                    <div key={i} className="bg-white/5 rounded-xl p-5 border border-white/10">
-                                        <div className="flex justify-between items-center">
-                                            <div className="flex items-center gap-4">
-                                                <Package className="w-8 h-8 text-orange-400" />
-                                                <div>
-                                                    <p className="text-xl font-semibold">{item.menuItemName || item.name || 'Item'}</p>
-                                                    {item.sizeName && (
-                                                        <span className="text-xs bg-brand/30 px-2 py-1 rounded-full text-brand mr-2">
-                                                            {item.sizeName}
-                                                        </span>
-                                                    )}
-                                                    <p className="text-sm text-gray-400">Rs {item.price} each</p>
+                                {selectedOrder.items.map((item, i) => {
+                                    const itemName = item.menuItemName || item.name || 'Item'
+                                    const imageUrl = item.mediaUrl || getMenuItemImage(itemName)
+                                    return (
+                                        <div key={i} className="bg-white/5 rounded-xl p-5 border border-white/10">
+                                            <div className="flex justify-between items-center gap-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-700 flex items-center justify-center">
+                                                        {imageUrl ? (
+                                                            <img src={imageUrl} alt={itemName} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <Package className="w-10 h-10 text-gray-400" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xl font-semibold">{itemName}</p>
+                                                        {item.sizeName && (
+                                                            <span className="text-xs bg-brand/30 px-2 py-1 rounded-full text-brand mr-2">
+                                                                {item.sizeName}
+                                                            </span>
+                                                        )}
+                                                        <p className="text-sm text-gray-400">Rs {item.price} each</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-3xl font-bold text-blue-300">{item.qty || item.quantity || 1}×</p>
+                                                    <p className="text-lg text-green-300">Rs {item.price * (item.qty || item.quantity || 1)}</p>
                                                 </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-3xl font-bold text-cyan-300">{item.qty || item.quantity || 1}×</p>
-                                                <p className="text-lg text-green-400">Rs {item.price * (item.qty || item.quantity || 1)}</p>
-                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    )
+                                })
+                                }
                             </div>
                         </div>
                     ) : selectedDate ? (
                         /* ORDERS FOR SELECTED DATE */
                         <div>
-                            <h2 className="text-2xl font-bold text-cyan-400 mb-6">
+                            <h2 className="text-2xl font-bold text-blue-300 mb-6">
                                 Orders on {format(selectedDate, 'dd MMMM yyyy')}
                             </h2>
                             {getOrdersForDate(selectedDate).length === 0 ? (
@@ -247,7 +278,7 @@ const OrderSummary = () => {
                                                             {order.tableNumber || (order.source === 'takeaway' ? 'Takeaway' : order.tableId ? `Table ${order.tableId}` : 'N/A')}
                                                         </span>
                                                         {order.customerName && (
-                                                            <span className="flex items-center gap-1 text-cyan-400">
+                                                            <span className="flex items-center gap-1 text-blue-300">
                                                                 {order.customerName}
                                                             </span>
                                                         )}
@@ -257,7 +288,7 @@ const OrderSummary = () => {
                                                     )}
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-3xl font-extrabold text-green-400">Rs {order.total}</p>
+                                                    <p className="text-3xl font-extrabold text-green-300">Rs {order.total}</p>
                                                     <p className="text-sm text-gray-400">{order.items.length} items</p>
                                                 </div>
                                             </div>
@@ -273,7 +304,7 @@ const OrderSummary = () => {
                                 <button onClick={goToPrevMonth} className="p-3 bg-white/10 rounded-full hover:bg-white/20 transition">
                                     <ChevronLeft className="w-6 h-6" />
                                 </button>
-                                <h2 className="text-3xl font-bold text-cyan-400">
+                                <h2 className="text-3xl font-bold text-blue-300">
                                     {format(currentMonth, 'MMMM yyyy')}
                                 </h2>
                                 <button onClick={goToNextMonth} className="p-3 bg-white/10 rounded-full hover:bg-white/20 transition">

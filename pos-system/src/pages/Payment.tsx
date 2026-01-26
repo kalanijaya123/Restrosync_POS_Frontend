@@ -191,7 +191,7 @@ const Payment = () => {
                                             {order.kotToken || `Order #${order.orderNo || 'N/A'}`}
                                         </h2>
                                         <div className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${order.paymentStatus === 'paid'
-                                            ? 'bg-green-500/20 text-green-400 border border-green-500'
+                                            ? 'bg-green-500/20 text-green-300 border border-green-500'
                                             : 'bg-red-500/20 text-red-400 border border-red-500'
                                             }`}>
                                             {order.paymentStatus === 'paid' ? 'PAID' : 'UNPAID'}
@@ -219,7 +219,7 @@ const Payment = () => {
                                     <div className="border-t border-gray-700 pt-4 mt-4">
                                         <div className="flex justify-between items-center">
                                             <span className="text-gray-400">Total:</span>
-                                            <span className="text-3xl font-bold text-green-400">
+                                            <span className="text-3xl font-bold text-green-300">
                                                 Rs {order.total ? order.total.toFixed(2) : '0.00'}
                                             </span>
                                         </div>
@@ -281,7 +281,7 @@ const Payment = () => {
                         {order.customerPhone && <> • <span className="text-gray-300">{order.customerPhone}</span></>}
                     </p>
                     <p className="text-2xl font-bold mt-4">
-                        <span className={`${order.paymentStatus === 'paid' ? 'text-green-400' : 'text-red-400'}`}>
+                        <span className={`${order.paymentStatus === 'paid' ? 'text-green-300' : 'text-red-400'}`}>
                             {order.paymentStatus === 'paid' ? 'PAID' : 'NOT PAID'}
                         </span>
                     </p>
@@ -294,7 +294,7 @@ const Payment = () => {
                         order.items.map((item, i) => (
                             <div key={i} className="flex justify-between text-lg bg-gray-100 dark:bg-slate-700 rounded-lg p-4">
                                 <span className="text-white">{item.qty} × {item.sizeName} {item.menuItemName}</span>
-                                <span className="text-green-400 font-bold">Rs {(item.basePrice * item.qty).toFixed(2)}</span>
+                                <span className="text-green-300 font-bold">Rs {(item.basePrice * item.qty).toFixed(2)}</span>
                             </div>
                         ))
                     ) : (
@@ -305,13 +305,13 @@ const Payment = () => {
                 <div className="border-t-2 border-brand mt-6 pt-6">
                     <div className="flex justify-between text-3xl font-bold">
                         <span className="text-gray-300">Total</span>
-                        <span className="text-green-400">Rs {order.total ? order.total.toFixed(2) : '0.00'}</span>
+                        <span className="text-green-300">Rs {order.total ? order.total.toFixed(2) : '0.00'}</span>
                     </div>
                 </div>
 
                 {order.paymentStatus === 'paid' ? (
                     <div className="text-center py-10">
-                        <p className="text-6xl text-green-400 font-bold mb-8">PAID</p>
+                        <p className="text-6xl text-green-300 font-bold mb-8">PAID</p>
                         <div className="flex flex-col gap-4">
                             <button
                                 onClick={sendToKitchen}
@@ -366,7 +366,7 @@ const Payment = () => {
                                     placeholder="0.00"
                                 />
                                 {cashReceived && change >= 0 && (
-                                    <p className="text-3xl mt-4 text-green-400 font-bold">
+                                    <p className="text-3xl mt-4 text-green-300 font-bold">
                                         Change: Rs {change.toFixed(2)}
                                     </p>
                                 )}

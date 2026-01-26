@@ -25,7 +25,7 @@ const ThirdPartyOrders = () => {
 
     return (
         <div className="p-10">
-            <h1 className="text-4xl font-bold mb-8 text-black">Third-Party Orders</h1>
+            <h1 className="text-4xl font-bold mb-8 text-blue-300">Third-Party Orders</h1>
             {orders.length === 0 ? (
                 <p className="text-gray-500">No third-party orders</p>
             ) : (

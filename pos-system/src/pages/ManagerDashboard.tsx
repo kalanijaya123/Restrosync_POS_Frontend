@@ -13,16 +13,16 @@ const ManagerDashboard = () => {
         <div>
             <h1 className="text-5xl font-bold mb-10 text-brand">Manager Dashboard</h1>
             <div className="grid grid-cols-3 gap-10">
-                <div className="p-12 rounded-3xl shadow-2xl text-white bg-brand">
-                    <p className="text-3xl">Total Sales</p>
+                <div className="p-12 rounded-3xl shadow-2xl text-gray-800 dark:text-gray-900 bg-blue-200">
+                    <p className="text-3xl font-semibold">Total Sales</p>
                     <p className="text-7xl font-bold mt-6">${stats.sales}</p>
                 </div>
-                <div className="p-12 rounded-3xl shadow-2xl text-white bg-green-600">
-                    <p className="text-3xl">Orders Today</p>
+                <div className="p-12 rounded-3xl shadow-2xl text-gray-800 dark:text-gray-900 bg-green-200">
+                    <p className="text-3xl font-semibold">Orders Today</p>
                     <p className="text-7xl font-bold mt-6">{stats.orders}</p>
                 </div>
-                <div className="p-12 rounded-3xl shadow-2xl text-white bg-orange-600">
-                    <p className="text-3xl">Avg Order</p>
+                <div className="p-12 rounded-3xl shadow-2xl text-gray-800 dark:text-gray-900 bg-orange-200">
+                    <p className="text-3xl font-semibold">Avg Order</p>
                     <p className="text-7xl font-bold mt-6">${stats.avg}</p>
                 </div>
             </div>

@@ -315,13 +315,19 @@ const TableLayout = () => {
                         >
                             <div
                                 onClick={() => handleTableClick(table)}
-                                className={`relative w-40 h-40 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all transform hover:scale-110 cursor-pointer
-                                    ${(table.reservedSeats || 0) >= table.chairs
-                                        ? 'bg-red-600 border-8 border-red-500/70'
+                                className="relative w-40 h-40 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all transform hover:scale-110 cursor-pointer border-8"
+                                style={{
+                                    backgroundColor: (table.reservedSeats || 0) >= table.chairs
+                                        ? '#EA7B7B'
                                         : (table.reservedSeats || 0) > 0
-                                            ? 'bg-orange-500 border-8 border-orange-400/70'
-                                            : 'bg-emerald-600 border-8 border-emerald-500/70'
-                                    }`}
+                                            ? '#FEC288'
+                                            : '#A3DC9A',
+                                    borderColor: (table.reservedSeats || 0) >= table.chairs
+                                        ? '#EA7B7Bb3'
+                                        : (table.reservedSeats || 0) > 0
+                                            ? '#FEC288b3'
+                                            : '#A3DC9Ab3'
+                                }}
                             >
                                 {(table.reservedSeats || 0) >= table.chairs ? (
                                     <Lock className="absolute top-4 right-4 w-9 h-9 text-white/90" />

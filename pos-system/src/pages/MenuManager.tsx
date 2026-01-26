@@ -95,17 +95,27 @@ const MenuManager = () => {
                 fetch(getApiUrl('/inventory'))
             ])
 
-            const menuData: MenuItem[] = await menuRes.json()
-            const invData: InventoryItem[] = await invRes.json()
+            if (!menuRes.ok || !invRes.ok) {
+                throw new Error(`Server error: ${menuRes.status} / ${invRes.status}`)
+            }
 
-            setMenu(menuData || [])
-            setInventory(invData || [])
+            const menuData = await menuRes.json()
+            const invData = await invRes.json()
 
-            const cats = [...new Set(menuData.map((m: MenuItem) => m.category))].sort()
+            // Ensure we always have arrays
+            setMenu(Array.isArray(menuData) ? menuData : [])
+            setInventory(Array.isArray(invData) ? invData : [])
+
+            const cats = [...new Set((Array.isArray(menuData) ? menuData : []).map((m: MenuItem) => m.category))].sort()
             setCategories(cats.length > 0 ? cats : ['Starters', 'Mains', 'Kottu', 'Rice', 'Beverages'])
             if (cats.length > 0) setCategory(cats[0])
-        } catch {
-            toast.error('Failed to load data')
+        } catch (error: any) {
+            console.error('Failed to load data:', error)
+            toast.error(`Failed to load data: ${error.message}`)
+            // Set safe defaults
+            setMenu([])
+            setInventory([])
+            setCategories(['Starters', 'Mains', 'Kottu', 'Rice', 'Beverages'])
         } finally {
             setLoading(false)
         }
@@ -285,7 +295,7 @@ const MenuManager = () => {
 
     if (loading) return (
         <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center">
-            <Loader2 className="w-20 h-20 animate-spin text-cyan-400" />
+            <Loader2 className="w-20 h-20 animate-spin text-blue-300" />
         </div>
     )
 
@@ -358,7 +368,7 @@ const MenuManager = () => {
 
                             {/* SIZES */}
                             <div className="bg-white/10 rounded-xl p-5">
-                                <h3 className="text-lg font-bold text-cyan-300 mb-4">Sizes & Prices</h3>
+                                <h3 className="text-lg font-bold text-blue-300 mb-4">Sizes & Prices</h3>
                                 {sizes.map((s, i) => (
                                     <div key={i} className="flex gap-3 mb-3 items-center">
                                         <input
@@ -391,7 +401,7 @@ const MenuManager = () => {
 
                             {/* RECIPE */}
                             <div className="bg-white/10 rounded-xl p-5">
-                                <h3 className="text-lg font-bold text-green-400 mb-4">Recipe (Auto Deduct)</h3>
+                                <h3 className="text-lg font-bold text-green-300 mb-4">Recipe (Auto Deduct)</h3>
                                 <div className="space-y-3">
                                     <div className="flex flex-col gap-y-2">
                                         <select
@@ -534,7 +544,7 @@ const MenuManager = () => {
 
                 {/* CURRENT MENU */}
                 <div className="max-w-7xl mx-auto mt-12">
-                    <h2 className="text-3xl font-bold text-center mb-8 text-cyan-300">
+                    <h2 className="text-3xl font-bold text-center mb-8 text-blue-300">
                         Current Menu ({menu.length} items)
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -552,12 +562,12 @@ const MenuManager = () => {
                                     </div>
                                 )}
                                 <div className="p-6">
-                                    <h3 className="text-3xl font-bold text-cyan-300">{item.name}</h3>
+                                    <h3 className="text-3xl font-bold text-blue-300">{item.name}</h3>
                                     <p className="text-purple-300 text-lg">{item.category}</p>
 
                                     <div className="mt-4 space-y-3">
                                         {sortSizes(item.sizes || []).map(s => (
-                                            <div key={s.name} className="flex justify-between text-green-400 font-bold text-xl">
+                                            <div key={s.name} className="flex justify-between text-green-300 font-bold text-xl">
                                                 <span>{s.name}</span>
                                                 <span>Rs {s.price}</span>
                                             </div>
