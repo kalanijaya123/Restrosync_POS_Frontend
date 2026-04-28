@@ -17,6 +17,7 @@ import ThirdPartyOrders from './pages/ThirdPartyOrders'
 import Settings from './pages/Settings'
 import OrderSummary from './pages/OrderSummary'
 import MenuManager from './pages/MenuManager'
+import ManageOrderItems from './pages/ManageOrderItems'
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
                   {<Route path="/manager" element={<ManagerDashboard />} />}
                   {<Route path="/inventory" element={<Inventory />} />}
                   {<Route path="/status" element={<KitchenStatus />} />}
+                  {<Route path="/manage-items" element={<ManageOrderItems />} />}
                   {<Route path="/third-party" element={<ThirdPartyOrders />} />}
                   {<Route path="/settings" element={<Settings />} />}
                   {<Route path="/menu-manager" element={<MenuManager />} />}

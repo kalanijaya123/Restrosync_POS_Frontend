@@ -1,27 +1,209 @@
 
+import { useEffect, useMemo, useState } from 'react'
+import {
+    defaultDiscountSettings,
+    getDiscountSettings,
+    saveDiscountSettings
+} from '../utils/discounts'
+import type { DiscountSettings } from '../utils/discounts'
+
+const monthLabels: Array<{ key: keyof DiscountSettings['monthlyDiscounts']; label: string }> = [
+    { key: 'january', label: 'January' },
+    { key: 'february', label: 'February' },
+    { key: 'march', label: 'March' },
+    { key: 'april', label: 'April' },
+    { key: 'may', label: 'May' },
+    { key: 'june', label: 'June' },
+    { key: 'july', label: 'July' },
+    { key: 'august', label: 'August' },
+    { key: 'september', label: 'September' },
+    { key: 'october', label: 'October' },
+    { key: 'november', label: 'November' },
+    { key: 'december', label: 'December' }
+]
 
 const Settings = () => {
+    const [discountSettings, setDiscountSettings] = useState<DiscountSettings>(defaultDiscountSettings)
+    const [saveMessage, setSaveMessage] = useState('')
+
+    useEffect(() => {
+        setDiscountSettings(getDiscountSettings())
+    }, [])
+
+    const activeMonthlyOffers = useMemo(
+        () => Object.values(discountSettings.monthlyDiscounts).filter(v => v > 0).length,
+        [discountSettings.monthlyDiscounts]
+    )
+
+    const updateNumberField = (field: keyof DiscountSettings, value: string) => {
+        const parsed = Number(value)
+        const safe = Number.isFinite(parsed) ? Math.max(0, parsed) : 0
+
+        setDiscountSettings(prev => ({
+            ...prev,
+            [field]: safe
+        }))
+    }
+
+    const updateMonthDiscount = (month: keyof DiscountSettings['monthlyDiscounts'], value: string) => {
+        const parsed = Number(value)
+        const clamped = Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 0
+
+        setDiscountSettings(prev => ({
+            ...prev,
+            monthlyDiscounts: {
+                ...prev.monthlyDiscounts,
+                [month]: clamped
+            }
+        }))
+    }
+
+    const handleSave = () => {
+        saveDiscountSettings(discountSettings)
+        setSaveMessage('Discount settings saved successfully.')
+        setTimeout(() => setSaveMessage(''), 2500)
+    }
+
     return (
         <div>
-            <h1 className="text-5xl font-bold mb-10 text-black">Settings</h1>
-            <div className="bg-white p-12 rounded-3xl shadow-2xl max-w-4xl">
-                {/* Ensure text inside white card is dark so it is readable against white background */}
-                <div className="space-y-10 text-3xl text-gray-800">
-                    <div>
-                        <label>Tax Rate:</label>
-                        <input type="number" defaultValue="15" className="ml-10 w-32 px-6 py-4 border-4 rounded-xl" /> %
+            <h1 className="text-5xl font-bold mb-8 text-gray-900 dark:text-white">Settings</h1>
+
+            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 p-8 rounded-3xl shadow-xl max-w-6xl">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Customer Discount Rules</h2>
+                    <span className="text-sm px-3 py-2 rounded-full bg-brand/20 text-brand font-semibold">
+                        {activeMonthlyOffers} monthly offers active
+                    </span>
+                </div>
+
+                <div className="mb-10">
+                    <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Monthly Discount Percentages</h3>
+                    <p className="text-gray-600 dark:text-gray-300 mb-5">
+                        Set month-wise promotional discounts. These are automatically applied in Payment based on the order month.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {monthLabels.map(({ key, label }) => (
+                            <label key={key} className="bg-gray-50 dark:bg-slate-700/70 p-4 rounded-xl border border-gray-200 dark:border-slate-600">
+                                <span className="block font-semibold text-gray-800 dark:text-gray-200 mb-2">{label}</span>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={100}
+                                        step="0.5"
+                                        value={discountSettings.monthlyDiscounts[key]}
+                                        onChange={(e) => updateMonthDiscount(key, e.target.value)}
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+                                    />
+                                    <span className="font-semibold text-gray-700 dark:text-gray-200">%</span>
+                                </div>
+                            </label>
+                        ))}
                     </div>
-                    <div>
-                        <label>Printer IP:</label>
-                        <input type="text" defaultValue="192.168.1.100" className="ml-10 w-64 px-6 py-4 border-4 rounded-xl" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-gray-50 dark:bg-slate-700/70 p-5 rounded-xl border border-gray-200 dark:border-slate-600">
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">High Value Customer Rule</h4>
+                        <label className="block mb-3 text-sm text-gray-700 dark:text-gray-300">Highest order threshold (Rs)</label>
+                        <input
+                            type="number"
+                            value={discountSettings.highestOrderThreshold}
+                            onChange={(e) => updateNumberField('highestOrderThreshold', e.target.value)}
+                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+                        />
+                        <label className="block mt-4 mb-3 text-sm text-gray-700 dark:text-gray-300">Discount percentage</label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step="0.5"
+                                value={discountSettings.highestOrderDiscountPercent}
+                                onChange={(e) => updateNumberField('highestOrderDiscountPercent', e.target.value)}
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+                            />
+                            <span className="font-semibold">%</span>
+                        </div>
                     </div>
-                    <div>
-                        <label>Serving Hours:</label>
-                        <input type="text" defaultValue="11:00 AM - 10:00 PM" className="ml-10 w-80 px-6 py-4 border-4 rounded-xl" />
+
+                    <div className="bg-gray-50 dark:bg-slate-700/70 p-5 rounded-xl border border-gray-200 dark:border-slate-600">
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">Loyalty Collection Rule</h4>
+                        <label className="block mb-3 text-sm text-gray-700 dark:text-gray-300">Paid collection threshold (Rs)</label>
+                        <input
+                            type="number"
+                            value={discountSettings.cumulativeSpendThreshold}
+                            onChange={(e) => updateNumberField('cumulativeSpendThreshold', e.target.value)}
+                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+                        />
+                        <label className="block mt-4 mb-3 text-sm text-gray-700 dark:text-gray-300">Discount percentage</label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step="0.5"
+                                value={discountSettings.cumulativeSpendDiscountPercent}
+                                onChange={(e) => updateNumberField('cumulativeSpendDiscountPercent', e.target.value)}
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+                            />
+                            <span className="font-semibold">%</span>
+                        </div>
                     </div>
-                    <button className="bg-indigo-700 hover:bg-indigo-800 text-white px-20 py-8 rounded-2xl text-3xl font-bold">
-                        Save Settings
+
+                    <div className="bg-gray-50 dark:bg-slate-700/70 p-5 rounded-xl border border-gray-200 dark:border-slate-600">
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">Large Bill Rule</h4>
+                        <label className="block mb-3 text-sm text-gray-700 dark:text-gray-300">Order value threshold (Rs)</label>
+                        <input
+                            type="number"
+                            value={discountSettings.largeOrderThreshold}
+                            onChange={(e) => updateNumberField('largeOrderThreshold', e.target.value)}
+                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+                        />
+                        <label className="block mt-4 mb-3 text-sm text-gray-700 dark:text-gray-300">Discount percentage</label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step="0.5"
+                                value={discountSettings.largeOrderDiscountPercent}
+                                onChange={(e) => updateNumberField('largeOrderDiscountPercent', e.target.value)}
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+                            />
+                            <span className="font-semibold">%</span>
+                        </div>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-slate-700/70 p-5 rounded-xl border border-gray-200 dark:border-slate-600">
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">Safety Limit</h4>
+                        <label className="block mb-3 text-sm text-gray-700 dark:text-gray-300">Maximum total discount (%)</label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step="0.5"
+                                value={discountSettings.maxTotalDiscountPercent}
+                                onChange={(e) => updateNumberField('maxTotalDiscountPercent', e.target.value)}
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+                            />
+                            <span className="font-semibold">%</span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                            Prevents stacking too many discounts on one bill.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="mt-8 flex flex-wrap items-center gap-4">
+                    <button
+                        onClick={handleSave}
+                        className="bg-brand hover:bg-brand/90 text-white px-8 py-3 rounded-xl text-lg font-semibold"
+                    >
+                        Save Discount Settings
                     </button>
+                    {saveMessage && <p className="text-green-600 dark:text-green-400 font-medium">{saveMessage}</p>}
                 </div>
             </div>
         </div>

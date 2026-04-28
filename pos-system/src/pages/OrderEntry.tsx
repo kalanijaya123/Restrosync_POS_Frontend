@@ -205,7 +205,7 @@ const OrderEntry = () => {
             if (!res.ok) throw new Error(await res.text())
 
             await res.json()
-            toast.success(`Order created for ${fullName}! Proceeding to payment...`, { duration: 2000 })
+            toast.success(`Order created for ${fullName}! Proceeding to payment and kitchen dispatch...`, { duration: 2000 })
             setCart([])
             setShowCustomerModal(false)
 
@@ -293,12 +293,12 @@ const OrderEntry = () => {
                                             const ex = p.find(e => e.extraId === extra.id)
                                             if (ex) return p.map(e => e.extraId === extra.id ? { ...e, qty: e.qty + 1 } : e)
                                             return [...p, { extraId: extra.id, name: extra.name, price: extra.price, qty: 1 }]
-                                        })} className="w-14 h-14 bg-green-600 rounded-full"><Plus /></button>
+                                        })} className="w-14 h-14 bg-green-600 rounded-full"><Plus className="text-white" /></button>
                                         <span className="text-3xl font-bold w-16 text-center">
                                             {selectedExtras.find(e => e.extraId === extra.id)?.qty || 0}
                                         </span>
                                         <button onClick={() => setSelectedExtras(p => p.map(e => e.extraId === extra.id ? { ...e, qty: Math.max(0, e.qty - 1) } : e).filter(e => e.qty > 0))}
-                                            className="w-14 h-14 bg-red-600 rounded-full"><Minus /></button>
+                                            className="w-14 h-14 bg-red-600 rounded-full"><Minus className="text-white" /></button>
                                     </div>
                                 </div>
                             )) : <p className="text-center text-gray-400 text-xl">No extras</p>}
@@ -402,7 +402,7 @@ const OrderEntry = () => {
                         </div>
                         <button onClick={sendToKitchen} disabled={cart.length === 0}
                             className="w-full py-3 bg-brand rounded-xl font-semibold text-base shadow-md disabled:opacity-50">
-                            SEND TO KITCHEN
+                            REVIEW & PAY
                         </button>
                     </div>
                 </div>

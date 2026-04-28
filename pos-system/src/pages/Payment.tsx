@@ -1,7 +1,8 @@
 // src/pages/Payment.tsx
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Calendar, Filter } from 'lucide-react'
+import { computeDiscounts, getDiscountSettings } from '../utils/discounts'
 
 interface Order {
     id: string
@@ -24,6 +25,64 @@ const Payment = () => {
     const [cashReceived, setCashReceived] = useState('')
     const [showAllOrders, setShowAllOrders] = useState(false)
     const [selectedDate, setSelectedDate] = useState('')
+    const [discountSettings] = useState(getDiscountSettings)
+
+    const normalizePhone = (raw?: string) => {
+        if (!raw) return ''
+        return raw.replace(/\D/g, '')
+    }
+
+    const normalizeCustomerName = (raw?: string) => {
+        if (!raw) return ''
+
+        return raw
+            .trim()
+            .toLowerCase()
+            .replace(/^(mr|mrs|miss|dr)\.?\s+/i, '')
+            .replace(/\s+/g, ' ')
+    }
+
+    const getCustomerIdentity = (order: Order) => {
+        const phone = normalizePhone(order.customerPhone)
+        if (phone) return `phone:${phone}`
+
+        const normalizedName = normalizeCustomerName(order.customerName)
+        if (normalizedName && normalizedName !== 'guest' && normalizedName !== 'walk-in') {
+            return `name:${normalizedName}`
+        }
+
+        return ''
+    }
+
+    const matchesCustomer = (order: Order, customerIdentity: string) => {
+        if (!customerIdentity) return false
+        return getCustomerIdentity(order) === customerIdentity
+    }
+
+    const getDiscountSummary = (order: Order) => {
+        const customerIdentity = getCustomerIdentity(order)
+
+        const customerOrders = customerIdentity
+            ? orders.filter(item => matchesCustomer(item, customerIdentity))
+            : []
+
+        const customerOrderTotals = customerOrders
+            .map(item => item.total || 0)
+            .filter(total => Number.isFinite(total) && total > 0)
+
+        const customerPaidOrderTotals = customerOrders
+            .filter(item => item.paymentStatus === 'paid')
+            .map(item => item.total || 0)
+            .filter(total => Number.isFinite(total) && total > 0)
+
+        return computeDiscounts({
+            subtotal: order.total || 0,
+            orderDate: order.createdAt,
+            customerOrderTotals,
+            customerPaidOrderTotals,
+            settings: discountSettings
+        })
+    }
 
     useEffect(() => {
         fetchAllOrders()
@@ -45,27 +104,45 @@ const Payment = () => {
     const handlePayment = async () => {
         if (!selectedOrder) return
 
+        const summary = getDiscountSummary(selectedOrder)
+
         const payload = method === 'cash'
             ? { orderId: selectedOrder.id, paymentMethod: 'cash', amountReceived: Number(cashReceived) }
-            : { orderId: selectedOrder.id, paymentMethod: 'card', amountReceived: selectedOrder.total || 0 }
+            : { orderId: selectedOrder.id, paymentMethod: 'card', amountReceived: summary.payableAmount }
 
         try {
             // First, process payment
-            await fetch('http://localhost:8080/api/payment/pay', {
+            const payResponse = await fetch('http://localhost:8080/api/payment/pay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
 
-            toast.success("Payment successful!")
+            if (!payResponse.ok) {
+                throw new Error(await payResponse.text() || 'Payment failed')
+            }
+
+            // Automatically send paid order to kitchen so inventory is deducted immediately
+            const kitchenResponse = await fetch(`http://localhost:8080/api/orders/${selectedOrder.id}/send-to-kitchen`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' }
+            })
+
+            if (!kitchenResponse.ok) {
+                throw new Error(await kitchenResponse.text() || 'Payment succeeded but failed to send to kitchen')
+            }
+
+            toast.success("Payment successful! Order sent to kitchen and inventory updated.")
 
             // Update the selected order's payment status locally
-            setSelectedOrder(prev => prev ? { ...prev, paymentStatus: 'paid' } : null)
+            setSelectedOrder(null)
+            setCashReceived('')
+            setMethod('cash')
 
             // Refresh orders list
             fetchAllOrders()
-        } catch {
-            toast.error("Payment failed")
+        } catch (error: any) {
+            toast.error(error?.message || "Payment failed")
         }
     }
 
@@ -73,19 +150,18 @@ const Payment = () => {
         if (!selectedOrder) return
 
         try {
-            // Update order status to 'pending' to send to kitchen
-            const response = await fetch(`http://localhost:8080/api/orders/${selectedOrder.id}/status`, {
+            // Send order to kitchen - this will deduct inventory on the backend
+            const response = await fetch(`http://localhost:8080/api/orders/${selectedOrder.id}/send-to-kitchen`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'pending' })
+                headers: { 'Content-Type': 'application/json' }
             })
 
             if (!response.ok) {
                 const errorText = await response.text()
-                throw new Error(errorText || 'Failed to update status')
+                throw new Error(errorText || 'Failed to send to kitchen')
             }
 
-            toast.success("Order sent to kitchen!", { duration: 3000 })
+            toast.success("Order sent to kitchen! Inventory updated.", { duration: 3000 })
             setSelectedOrder(null)
             setCashReceived('')
             setMethod('cash')
@@ -251,7 +327,8 @@ const Payment = () => {
 
     // Payment processing view
     const order = selectedOrder
-    const change = method === 'cash' ? Number(cashReceived) - (order.total || 0) : 0
+    const discountSummary = getDiscountSummary(order)
+    const change = method === 'cash' ? Number(cashReceived) - discountSummary.payableAmount : 0
 
     return (
         <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
@@ -303,9 +380,30 @@ const Payment = () => {
                 </div>
 
                 <div className="border-t-2 border-brand mt-6 pt-6">
-                    <div className="flex justify-between text-3xl font-bold">
-                        <span className="text-gray-300">Total</span>
-                        <span className="text-green-300">Rs {order.total ? order.total.toFixed(2) : '0.00'}</span>
+                    <div className="space-y-3">
+                        <div className="flex justify-between text-lg font-semibold">
+                            <span className="text-gray-300">Subtotal</span>
+                            <span className="text-gray-100">Rs {discountSummary.subtotal.toFixed(2)}</span>
+                        </div>
+
+                        {discountSummary.discounts.map((discount) => (
+                            <div key={discount.key} className="flex justify-between text-sm">
+                                <span className="text-amber-300">{discount.label} ({discount.percent.toFixed(1)}%)</span>
+                                <span className="text-amber-300">- Rs {discount.amount.toFixed(2)}</span>
+                            </div>
+                        ))}
+
+                        {discountSummary.discounts.length > 0 && (
+                            <div className="flex justify-between text-base font-semibold border-t border-slate-600 pt-3">
+                                <span className="text-orange-300">Discount Applied ({discountSummary.totalDiscountPercent.toFixed(1)}%)</span>
+                                <span className="text-orange-300">- Rs {discountSummary.totalDiscountAmount.toFixed(2)}</span>
+                            </div>
+                        )}
+
+                        <div className="flex justify-between text-3xl font-bold border-t border-brand pt-4">
+                            <span className="text-gray-300">Payable Total</span>
+                            <span className="text-green-300">Rs {discountSummary.payableAmount.toFixed(2)}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -370,13 +468,18 @@ const Payment = () => {
                                         Change: Rs {change.toFixed(2)}
                                     </p>
                                 )}
+                                {cashReceived && change < 0 && (
+                                    <p className="text-lg mt-3 text-red-400 font-semibold">
+                                        Need Rs {Math.abs(change).toFixed(2)} more to complete payment.
+                                    </p>
+                                )}
                             </div>
                         )}
 
                         {/* Confirm Button */}
                         <button
                             onClick={handlePayment}
-                            disabled={method === 'cash' && (!cashReceived || Number(cashReceived) < (order.total || 0))}
+                            disabled={method === 'cash' && (!cashReceived || Number(cashReceived) < discountSummary.payableAmount)}
                             className="w-full mt-10 py-8 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 text-white text-4xl font-bold rounded-lg disabled:cursor-not-allowed transition"
                         >
                             {method === 'card' ? 'Charge Card & Complete' : 'Confirm Payment'}

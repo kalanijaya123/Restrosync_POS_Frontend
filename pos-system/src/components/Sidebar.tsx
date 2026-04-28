@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom'
 import {
     Table, ShoppingCart, Receipt,
     CreditCard, Users, Package, ChefHat,
-    Globe, Utensils, Settings
+    Globe, Utensils, Settings, Plus
 } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 
@@ -16,6 +16,7 @@ const Sidebar = () => {
         { to: '/orders', label: 'Order Entry', icon: ShoppingCart },
         { to: '/summary', label: 'Order Summary', icon: Receipt },
         { to: '/payment', label: 'Payment', icon: CreditCard },
+        { to: '/manage-items', label: 'Add Items to Order', icon: Plus },
         { to: '/manager', label: 'Manager', icon: Users },
         { to: '/inventory', label: 'Inventory', icon: Package },
         { to: '/status', label: 'Kitchen Status', icon: ChefHat },

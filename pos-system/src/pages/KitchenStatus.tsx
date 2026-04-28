@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ChefHat, Clock, AlertCircle, Package, AlertOctagon } from 'lucide-react'
+import { ChefHat, Clock, AlertCircle, Package, AlertOctagon, Plus } from 'lucide-react'
 
 interface Order {
     id: string
@@ -24,6 +25,7 @@ interface Order {
 }
 
 const KitchenStatus = () => {
+    const navigate = useNavigate()
     const [orders, setOrders] = useState<Order[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -228,6 +230,13 @@ const KitchenStatus = () => {
                                                 })
                                                 }
                                             </div>
+                                            <button
+                                                onClick={() => navigate('/manage-items')}
+                                                className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                                            >
+                                                <Plus className="w-5 h-5" />
+                                                Add Items to Order
+                                            </button>
                                         </motion.div>
                                     ))
                                 )}
@@ -291,6 +300,13 @@ const KitchenStatus = () => {
                                                 })
                                                 }
                                             </div>
+                                            <button
+                                                onClick={() => navigate('/manage-items')}
+                                                className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                                            >
+                                                <Plus className="w-5 h-5" />
+                                                Add Items to Order
+                                            </button>
                                         </motion.div>
                                     ))
                                 )}
@@ -354,6 +370,13 @@ const KitchenStatus = () => {
                                                 })
                                                 }
                                             </div>
+                                            <button
+                                                onClick={() => navigate('/manage-items')}
+                                                className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                                            >
+                                                <Plus className="w-5 h-5" />
+                                                Add Items to Order
+                                            </button>
                                         </motion.div>
                                     ))
                                 )}
