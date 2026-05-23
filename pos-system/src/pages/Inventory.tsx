@@ -134,7 +134,7 @@ const InventoryDashboard = () => {
                                     </div>
 
                                     <div className="text-6xl font-extrabold mb-4">
-                                        {item.currentStock}
+                                        {Number(item.currentStock).toFixed(2)}
                                         <span className="text-2xl text-gray-400"> {item.unit}</span>
                                     </div>
 

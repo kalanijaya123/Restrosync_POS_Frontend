@@ -5,6 +5,11 @@ import toast, { Toaster } from 'react-hot-toast'
 import { Plus, Minus, ShoppingCart, ArrowLeft, Package, User, X } from 'lucide-react'
 
 interface Size { name: string; price: number }
+interface RecipeItem {
+    ingredientId: string
+    ingredientName: string
+    quantities: Record<string, number>
+}
 interface ExtraItem { id: string; name: string; price: number; quantityPerUnit: number; ingredientId: string }
 interface MenuItem {
     id: string
@@ -12,9 +17,23 @@ interface MenuItem {
     category: string
     sizes: Size[]
     mediaUrl?: string
+    recipe?: RecipeItem[]
     extras?: ExtraItem[]
 }
 interface SelectedExtra { extraId: string; name: string; price: number; qty: number }
+interface InventoryItem {
+    id: string
+    name: string
+    unit: string
+    currentStock: number
+}
+interface InventoryWarning {
+    menuItemName: string
+    ingredientName: string
+    required: number
+    available: number
+    unit: string
+}
 interface CartItem {
     menuItemId: string
     name: string
@@ -27,6 +46,7 @@ interface CartItem {
 
 const OrderEntry = () => {
     const [menu, setMenu] = useState<MenuItem[]>([])
+    const [inventory, setInventory] = useState<InventoryItem[]>([])
     const [cart, setCart] = useState<CartItem[]>([])
     const [selectedCategory, setSelectedCategory] = useState('All')
     const [searchQuery, setSearchQuery] = useState('')
@@ -37,6 +57,8 @@ const OrderEntry = () => {
     const [showExtrasModal, setShowExtrasModal] = useState(false)
     const [currentItemForExtras, setCurrentItemForExtras] = useState<{ item: MenuItem; size: Size } | null>(null)
     const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([])
+    const [showInventoryWarningModal, setShowInventoryWarningModal] = useState(false)
+    const [inventoryWarnings, setInventoryWarnings] = useState<InventoryWarning[]>([])
 
     const [showCustomerModal, setShowCustomerModal] = useState(false)
     const [title, setTitle] = useState<'Mr' | 'Mrs' | 'Miss' | 'Dr' | ''>('')
@@ -49,6 +71,7 @@ const OrderEntry = () => {
 
     useEffect(() => {
         fetchMenu()
+        fetchInventory()
         if (tableId) {
             fetchTableDetails()
         }
@@ -75,6 +98,7 @@ const OrderEntry = () => {
             const safeData = Array.isArray(data) ? data.map((item: any) => ({
                 ...item,
                 sizes: Array.isArray(item.sizes) ? item.sizes : [],
+                recipe: Array.isArray(item.recipe) ? item.recipe : [],
                 extras: Array.isArray(item.extras) ? item.extras : []
             })) : []
             setMenu(safeData)
@@ -83,6 +107,18 @@ const OrderEntry = () => {
             setMenu([])
         } finally {
             setLoading(false)
+        }
+    }
+
+    const fetchInventory = async () => {
+        try {
+            const res = await fetch('http://localhost:8080/api/inventory')
+            if (!res.ok) throw new Error()
+            const data = await res.json()
+            setInventory(Array.isArray(data) ? data : [])
+        } catch (err) {
+            console.error('Failed to load inventory for order validation')
+            setInventory([])
         }
     }
 
@@ -161,12 +197,43 @@ const OrderEntry = () => {
 
     const total = cart.reduce((sum, item) => sum + item.totalPrice * item.qty, 0)
 
+    const getInventoryWarnings = () => {
+        const warnings: InventoryWarning[] = []
+
+        cart.forEach(cartItem => {
+            const menuItem = menu.find(item => item.id === cartItem.menuItemId)
+            if (!menuItem?.recipe?.length) return
+
+            menuItem.recipe.forEach(recipeItem => {
+                const inventoryItem = inventory.find(item => item.id === recipeItem.ingredientId)
+                const perUnit = recipeItem.quantities?.[cartItem.sizeName]
+                    ?? recipeItem.quantities?.Regular
+                    ?? Object.values(recipeItem.quantities || {})[0]
+                    ?? 0
+                const required = perUnit * cartItem.qty
+                const available = inventoryItem?.currentStock ?? 0
+
+                if (!inventoryItem || available < required) {
+                    warnings.push({
+                        menuItemName: cartItem.name,
+                        ingredientName: inventoryItem?.name || recipeItem.ingredientName || 'Unknown ingredient',
+                        required,
+                        available,
+                        unit: inventoryItem?.unit || 'unit'
+                    })
+                }
+            })
+        })
+
+        return warnings
+    }
+
     const sendToKitchen = () => {
         if (cart.length === 0) return toast.error('Cart is empty!')
         setShowCustomerModal(true)
     }
 
-    const confirmOrder = async () => {
+    const submitOrder = async () => {
         const fullName = title ? `${title}. ${customerName.trim()}` : (customerName.trim() || 'Guest')
         const fullPhone = phoneNumber ? `${countryCode}${phoneNumber.replace(/\D/g, '')}` : null
 
@@ -214,6 +281,22 @@ const OrderEntry = () => {
         } catch (err: any) {
             toast.error('Failed: ' + err.message)
         }
+    }
+
+    const confirmOrder = () => {
+        const warnings = getInventoryWarnings()
+        if (warnings.length > 0) {
+            setInventoryWarnings(warnings)
+            setShowInventoryWarningModal(true)
+            return
+        }
+
+        void submitOrder()
+    }
+
+    const proceedWithWarnings = () => {
+        setShowInventoryWarningModal(false)
+        void submitOrder()
     }
 
     if (loading) return <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center text-6xl text-brand">Loading...</div>
@@ -267,6 +350,46 @@ const OrderEntry = () => {
                             <button onClick={() => setShowCustomerModal(false)} className="flex-1 py-5 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-bold text-xl">Cancel</button>
                             <button onClick={confirmOrder} className="flex-1 py-5 bg-brand rounded-xl font-bold text-xl shadow-xl">
                                 Confirm & Go to Payment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* INVENTORY WARNING MODAL */}
+            {showInventoryWarningModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-6">
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-10 max-w-2xl w-full border-2 border-amber-400 shadow-2xl">
+                        <h2 className="text-3xl font-bold text-amber-400 mb-4">Inventory shortage detected</h2>
+                        <p className="text-gray-600 dark:text-gray-300 mb-6">
+                            One or more ingredients for this order are missing or below the required amount.
+                            You can still proceed, but the kitchen may not be able to prepare every item fully.
+                        </p>
+
+                        <div className="max-h-80 overflow-y-auto space-y-3 mb-8">
+                            {inventoryWarnings.map((warning, index) => (
+                                <div key={`${warning.menuItemName}-${warning.ingredientName}-${index}`} className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-400/10 p-4">
+                                    <p className="font-bold text-gray-900 dark:text-white">{warning.menuItemName}</p>
+                                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                                        {warning.ingredientName}: needs {warning.required.toFixed(2)} {warning.unit},
+                                        available {warning.available.toFixed(2)} {warning.unit}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setShowInventoryWarningModal(false)}
+                                className="flex-1 py-4 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-bold text-lg"
+                            >
+                                Go Back and Edit
+                            </button>
+                            <button
+                                onClick={proceedWithWarnings}
+                                className="flex-1 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-lg"
+                            >
+                                Proceed Anyway
                             </button>
                         </div>
                     </div>
