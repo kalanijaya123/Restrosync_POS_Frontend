@@ -23,6 +23,7 @@ const Payment = () => {
     const [loading, setLoading] = useState(true)
     const [method, setMethod] = useState<'cash' | 'card'>('cash')
     const [cashReceived, setCashReceived] = useState('')
+    const [customerEmail, setCustomerEmail] = useState('')
     const [cardHolderName, setCardHolderName] = useState('')
     const [cardLast4, setCardLast4] = useState('')
     const [cardExpiry, setCardExpiry] = useState('')
@@ -45,6 +46,8 @@ const Payment = () => {
             .replace(/^(mr|mrs|miss|dr)\.?\s+/i, '')
             .replace(/\s+/g, ' ')
     }
+
+    const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 
     const getCustomerIdentity = (order: Order) => {
         const phone = normalizePhone(order.customerPhone)
@@ -127,12 +130,18 @@ const Payment = () => {
             }
         }
 
+        if (customerEmail.trim() && !isValidEmail(customerEmail)) {
+            toast.error('Enter a valid email address')
+            return
+        }
+
         const payload = method === 'cash'
-            ? { orderId: selectedOrder.id, paymentMethod: 'cash', amountReceived: Number(cashReceived) }
+            ? { orderId: selectedOrder.id, paymentMethod: 'cash', amountReceived: Number(cashReceived), customerEmail: customerEmail.trim() || null }
             : {
                 orderId: selectedOrder.id,
                 paymentMethod: 'card',
                 amountReceived: summary.payableAmount,
+                customerEmail: customerEmail.trim() || null,
                 cardHolderName: cardHolderName.trim(),
                 cardLast4: cardLast4.trim(),
                 cardExpiry: cardExpiry.trim(),
@@ -167,6 +176,7 @@ const Payment = () => {
             setSelectedOrder(null)
             setCashReceived('')
             setMethod('cash')
+            setCustomerEmail('')
             setCardHolderName('')
             setCardLast4('')
             setCardExpiry('')
@@ -198,6 +208,7 @@ const Payment = () => {
             setSelectedOrder(null)
             setCashReceived('')
             setMethod('cash')
+            setCustomerEmail('')
             setCardHolderName('')
             setCardLast4('')
             setCardExpiry('')
@@ -379,6 +390,7 @@ const Payment = () => {
                         setSelectedOrder(null)
                         setCashReceived('')
                         setMethod('cash')
+                        setCustomerEmail('')
                         setCardHolderName('')
                         setCardLast4('')
                         setCardExpiry('')
@@ -524,6 +536,20 @@ const Payment = () => {
                                 )}
                             </div>
                         )}
+
+                        <div className="mt-8">
+                            <label className="text-2xl text-white">Invoice Email</label>
+                            <input
+                                type="email"
+                                value={customerEmail}
+                                onChange={(e) => setCustomerEmail(e.target.value)}
+                                className="w-full mt-3 px-6 py-6 text-2xl border-2 rounded-lg bg-gray-100 text-gray-900 border-gray-300 focus:border-brand focus:outline-none dark:bg-gray-800 dark:text-white dark:border-gray-600"
+                                placeholder="customer@example.com"
+                            />
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                Optional. If entered, the invoice summary will be emailed after payment.
+                            </p>
+                        </div>
 
                         {/* Card Details */}
                         {method === 'card' && (

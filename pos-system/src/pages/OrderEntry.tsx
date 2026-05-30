@@ -89,6 +89,7 @@ const OrderEntry = () => {
     const [customerName, setCustomerName] = useState('')
     const [countryCode, setCountryCode] = useState('+94')
     const [phoneNumber, setPhoneNumber] = useState('')
+    const [orderNote, setOrderNote] = useState('')
 
     const { tableId } = useParams<{ tableId: string }>()
     const navigate = useNavigate()
@@ -290,7 +291,7 @@ const OrderEntry = () => {
             source: source,                     // "dine-in" or "takeaway"
             customerName: fullName,
             customerPhone: fullPhone,
-            notes: "",
+            notes: orderNote.trim() || null,
             waiterName: "Staff"
         }
 
@@ -306,6 +307,7 @@ const OrderEntry = () => {
             await res.json()
             toast.success(`Order created for ${fullName}! Proceeding to payment and kitchen dispatch...`, { duration: 2000 })
             setCart([])
+            setOrderNote('')
             setShowCustomerModal(false)
 
             // Navigate to payment page
@@ -375,6 +377,17 @@ const OrderEntry = () => {
                                 </select>
                                 <input type="tel" placeholder="771234567" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)}
                                     className="flex-1 px-6 py-5 rounded-xl bg-white/10 text-xl border border-white/20 focus:border-cyan-400 outline-none" />
+                            </div>
+
+                            <div>
+                                <label className="text-xl text-gray-300">Kitchen note</label>
+                                <textarea
+                                    rows={4}
+                                    placeholder="Example: Extra spicy, no onion, serve sauce separately"
+                                    value={orderNote}
+                                    onChange={e => setOrderNote(e.target.value)}
+                                    className="w-full mt-3 px-6 py-5 rounded-xl bg-white/10 text-xl border border-white/20 focus:border-cyan-400 outline-none resize-none"
+                                />
                             </div>
                         </div>
 
