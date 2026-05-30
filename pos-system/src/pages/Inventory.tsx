@@ -82,6 +82,14 @@ const InventoryDashboard = () => {
         i.name.toLowerCase().includes(search.toLowerCase())
     )
 
+    const formatStock = (stock: number, unit: string) => {
+        if (unit === 'piece' || unit === 'packet') {
+            return Number.isInteger(stock) ? `${stock}` : `${stock}`
+        }
+
+        return Number(stock).toFixed(2)
+    }
+
     return (
         <>
             <Toaster position="top-center" />
@@ -90,9 +98,11 @@ const InventoryDashboard = () => {
 
                     <div className="flex justify-between items-center mb-10">
                         <div>
-                            <h1 className="text-5xl font-extrabold text-brand">
-                                Inventory Control
-                            </h1>
+                            <div className="inline-flex items-center rounded-2xl bg-slate-900 px-6 py-3 shadow-lg">
+                                <h1 className="text-5xl font-extrabold text-white">
+                                    Inventory Control
+                                </h1>
+                            </div>
                             <p className="text-gray-400 mt-2">Owner/Manager Only</p>
                         </div>
                         <button
@@ -109,13 +119,13 @@ const InventoryDashboard = () => {
 
                     <div className="max-w-2xl mb-10">
                         <div className="relative">
-                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 w-6 h-6" />
+                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                             <input
                                 type="text"
                                 placeholder="Search ingredients..."
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
-                                className="w-full pl-16 pr-6 py-5 bg-white/10 backdrop-blur border border-white/20 rounded-2xl text-xl focus:border-cyan-500/70 transition"
+                                className="w-full pl-16 pr-6 py-3.5 bg-white/10 backdrop-blur border border-white/20 rounded-2xl text-xl focus:border-cyan-500/70 transition"
                             />
                         </div>
                     </div>
@@ -124,21 +134,21 @@ const InventoryDashboard = () => {
                         {filtered.map(item => {
                             const isLow = item.currentStock <= item.lowStockAlert
                             return (
-                                <div key={item.id} className={`rounded-3xl p-8 border-4 transition-all shadow-2xl ${isLow ? 'bg-red-900/50 border-red-500 shadow-red-500/40 animate-pulse' : 'bg-white/10 border-brand'}`}>
+                                <div key={item.id} className={`rounded-3xl p-8 border-2 transition-all shadow-xl ${isLow ? 'bg-red-50 border-red-300 dark:bg-red-900/30 dark:border-red-500' : 'bg-gray-50 border-gray-200 dark:bg-slate-800 dark:border-slate-700'}`}>
                                     <div className="flex justify-between items-start mb-6">
                                         <div>
-                                            <h3 className="text-3xl font-bold text-blue-300">{item.name}</h3>
-                                            <p className="text-lg text-gray-400">{item.category}</p>
+                                            <h3 className="text-3xl font-bold text-slate-800 dark:text-blue-300">{item.name}</h3>
+                                            <p className="text-lg text-slate-500 dark:text-gray-400">{item.category}</p>
                                         </div>
                                         {isLow && <AlertTriangle className="w-12 h-12 text-red-400" />}
                                     </div>
 
-                                    <div className="text-6xl font-extrabold mb-4">
-                                        {Number(item.currentStock).toFixed(2)}
-                                        <span className="text-2xl text-gray-400"> {item.unit}</span>
+                                    <div className="text-6xl font-extrabold mb-4 text-slate-900 dark:text-white">
+                                        {formatStock(Number(item.currentStock), item.unit)}
+                                        <span className="text-2xl text-slate-500 dark:text-gray-400"> {item.unit}</span>
                                     </div>
 
-                                    <p className="text-orange-300 text-lg mb-6">
+                                    <p className="text-orange-600 dark:text-orange-300 text-lg mb-6">
                                         Alert at: {item.lowStockAlert} {item.unit}
                                     </p>
 
@@ -160,7 +170,7 @@ const InventoryDashboard = () => {
                                                 })
                                                 setShowModal(true)
                                             }}
-                                            className="p-4 bg-white/20 rounded-xl hover:bg-white/30 transition"
+                                            className="p-4 bg-gray-200 dark:bg-slate-700 rounded-xl hover:bg-gray-300 dark:hover:bg-slate-600 transition"
                                         >
                                             <Edit2 className="w-6 h-6" />
                                         </button>
@@ -175,7 +185,7 @@ const InventoryDashboard = () => {
             {/* MODAL */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-50">
-                    <div className="bg-gradient-to-br from-blue-200 to-purple-200 dark:from-blue-200/30 dark:to-purple-200/30 p-12 rounded-3xl border-4 border-blue-300 shadow-2xl w-full max-w-2xl">
+                    <div className="bg-linear-to-br from-blue-200 to-purple-200 dark:from-blue-200/30 dark:to-purple-200/30 p-12 rounded-3xl border-4 border-blue-300 shadow-2xl w-full max-w-2xl">
                         <h2 className="text-4xl font-bold text-gray-900 dark:text-blue-300 text-center mb-10">
                             {editing ? 'Edit' : 'New'} Ingredient
                         </h2>

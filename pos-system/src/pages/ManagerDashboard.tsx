@@ -128,19 +128,21 @@ const ManagerDashboard = () => {
 
     return (
         <div>
-            <h1 className="text-5xl font-bold mb-10 text-brand">Manager Dashboard</h1>
-            <div className="grid grid-cols-3 gap-10">
-                <div className="p-12 rounded-3xl shadow-2xl text-gray-800 dark:text-gray-900 bg-blue-200">
-                    <p className="text-3xl font-semibold">Total Sales</p>
-                    <p className="text-7xl font-bold mt-6">{formatRs(stats.sales)}</p>
+            <div className="inline-flex items-center rounded-2xl bg-slate-900 px-6 py-3 mb-10 shadow-lg">
+                <h1 className="text-5xl font-bold text-white">Manager Dashboard</h1>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white bg-slate-100 dark:bg-slate-800/80">
+                    <p className="text-lg font-semibold text-slate-600 dark:text-slate-300">Total Sales</p>
+                    <p className="text-5xl font-bold mt-4 text-brand">{formatRs(stats.sales)}</p>
                 </div>
-                <div className="p-12 rounded-3xl shadow-2xl text-gray-800 dark:text-gray-900 bg-green-200">
-                    <p className="text-3xl font-semibold">Orders Today</p>
-                    <p className="text-7xl font-bold mt-6">{stats.orders}</p>
+                <div className="p-6 rounded-2xl shadow-lg border border-emerald-200 dark:border-emerald-700 text-slate-800 dark:text-white bg-emerald-50 dark:bg-emerald-900/20">
+                    <p className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">Orders Today</p>
+                    <p className="text-5xl font-bold mt-4 text-emerald-600 dark:text-emerald-300">{stats.orders}</p>
                 </div>
-                <div className="p-12 rounded-3xl shadow-2xl text-gray-800 dark:text-gray-900 bg-orange-200">
-                    <p className="text-3xl font-semibold">Avg Order</p>
-                    <p className="text-7xl font-bold mt-6">{formatRs(stats.avg)}</p>
+                <div className="p-6 rounded-2xl shadow-lg border border-amber-200 dark:border-amber-700 text-slate-800 dark:text-white bg-amber-50 dark:bg-amber-900/20">
+                    <p className="text-lg font-semibold text-amber-700 dark:text-amber-300">Avg Order</p>
+                    <p className="text-5xl font-bold mt-4 text-amber-600 dark:text-amber-300">{formatRs(stats.avg)}</p>
                 </div>
             </div>
 

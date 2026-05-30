@@ -32,6 +32,7 @@ interface Order {
     status: 'pending' | 'preparing' | 'ready'
     customerName?: string
     kotToken?: string
+    createdAt?: string
 }
 
 interface CartItem {
@@ -50,6 +51,7 @@ const ManageOrderItems = () => {
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('All')
+    const [sortMode, setSortMode] = useState<'newest' | 'oldest' | 'orderAsc' | 'orderDesc'>('newest')
     const [cart, setCart] = useState<CartItem[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -108,6 +110,26 @@ const ManageOrderItems = () => {
             order.orderNo.toString().includes(search) ||
             order.customerName?.toLowerCase().includes(search)
         )
+    })
+
+    const sortedOrders = [...filteredOrders].sort((a, b) => {
+        try {
+            if (sortMode === 'newest') {
+                const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0
+                const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0
+                return tb - ta
+            }
+            if (sortMode === 'oldest') {
+                const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0
+                const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0
+                return ta - tb
+            }
+            if (sortMode === 'orderAsc') return (a.orderNo || 0) - (b.orderNo || 0)
+            if (sortMode === 'orderDesc') return (b.orderNo || 0) - (a.orderNo || 0)
+        } catch (e) {
+            return 0
+        }
+        return 0
     })
 
     const selectOrder = (order: Order) => {
@@ -235,36 +257,52 @@ const ManageOrderItems = () => {
                     {!selectedOrder ? (
                         <>
                             {/* HEADER */}
-                            <h1 className="text-5xl font-bold mb-10 text-brand">Add Items to Order</h1>
+                            <div className="inline-flex items-center rounded-2xl bg-slate-900 px-6 py-3 mb-10 shadow-lg">
+                                <h1 className="text-5xl font-bold text-white">Add Items to Order</h1>
+                            </div>
                             <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">Select an order to add more items</p>
 
-                            {/* SEARCH */}
-                            <div className="mb-8">
-                                <div className="relative">
-                                    <Search className="absolute left-4 top-4 w-6 h-6 text-gray-400" />
+                            {/* SEARCH + SORT */}
+                            <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                                <div className="flex-1 relative">
+                                    <Search className="absolute left-4 top-3 w-4 h-4 text-gray-400" />
                                     <input
                                         type="text"
                                         placeholder="Search by table number, order #, or customer name..."
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
-                                        className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-2xl focus:outline-none focus:ring-2 focus:ring-brand"
+                                        className="w-full pl-14 pr-6 py-2 rounded-2xl bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-base focus:outline-none focus:ring-2 focus:ring-brand"
                                     />
+                                </div>
+
+                                <div className="mt-4 sm:mt-0 w-full sm:w-64">
+                                    <label className="block text-sm text-gray-600 dark:text-gray-300 mb-2">Sort</label>
+                                    <select
+                                        value={sortMode}
+                                        onChange={e => setSortMode(e.target.value as any)}
+                                        className="w-full px-4 py-2.5 rounded-2xl bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-base focus:outline-none"
+                                    >
+                                        <option value="newest">Newest (by time)</option>
+                                        <option value="oldest">Oldest (by time)</option>
+                                        <option value="orderAsc">Order # Asc</option>
+                                        <option value="orderDesc">Order # Desc</option>
+                                    </select>
                                 </div>
                             </div>
 
                             {/* ORDERS LIST */}
                             <div className="grid grid-cols-1 gap-6">
-                                {filteredOrders.length === 0 ? (
+                                {sortedOrders.length === 0 ? (
                                     <div className="text-center py-20">
                                         <Package className="w-20 h-20 mx-auto text-gray-400 mb-4" />
                                         <p className="text-3xl text-gray-500">No orders available</p>
                                     </div>
                                 ) : (
-                                    filteredOrders.map(order => (
+                                    sortedOrders.map(order => (
                                         <div
                                             key={order.id}
                                             onClick={() => selectOrder(order)}
-                                            className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-slate-800 dark:to-slate-700 p-6 rounded-2xl border-2 border-blue-200 dark:border-slate-600 shadow-lg hover:shadow-xl cursor-pointer transition-all"
+                                            className="bg-gray-50 dark:bg-slate-800 p-6 rounded-2xl border-2 border-gray-200 dark:border-slate-700 shadow-lg hover:shadow-xl cursor-pointer transition-all"
                                         >
                                             <div className="grid grid-cols-4 gap-6">
                                                 <div>
@@ -306,7 +344,7 @@ const ManageOrderItems = () => {
                             </button>
 
                             {/* SELECTED ORDER HEADER */}
-                            <div className="bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-slate-800 dark:to-slate-700 p-8 rounded-2xl mb-10 border-2 border-blue-300 dark:border-slate-600">
+                            <div className="bg-gray-50 dark:bg-slate-800 p-8 rounded-2xl mb-10 border-2 border-gray-200 dark:border-slate-700">
                                 <div className="grid grid-cols-4 gap-6">
                                     <div>
                                         <p className="text-gray-600 dark:text-gray-400">Order #</p>

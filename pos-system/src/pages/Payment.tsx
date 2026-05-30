@@ -23,6 +23,10 @@ const Payment = () => {
     const [loading, setLoading] = useState(true)
     const [method, setMethod] = useState<'cash' | 'card'>('cash')
     const [cashReceived, setCashReceived] = useState('')
+    const [cardHolderName, setCardHolderName] = useState('')
+    const [cardLast4, setCardLast4] = useState('')
+    const [cardExpiry, setCardExpiry] = useState('')
+    const [cardTransactionRef, setCardTransactionRef] = useState('')
     const [showAllOrders, setShowAllOrders] = useState(false)
     const [selectedDate, setSelectedDate] = useState('')
     const [discountSettings] = useState(getDiscountSettings)
@@ -106,9 +110,34 @@ const Payment = () => {
 
         const summary = getDiscountSummary(selectedOrder)
 
+        if (method === 'card') {
+            if (!cardHolderName.trim()) {
+                toast.error('Card holder name is required')
+                return
+            }
+
+            if (cardLast4.trim().length !== 4 || !/^\d{4}$/.test(cardLast4.trim())) {
+                toast.error('Enter the last 4 digits of the card')
+                return
+            }
+
+            if (!cardExpiry.trim()) {
+                toast.error('Card expiry is required')
+                return
+            }
+        }
+
         const payload = method === 'cash'
             ? { orderId: selectedOrder.id, paymentMethod: 'cash', amountReceived: Number(cashReceived) }
-            : { orderId: selectedOrder.id, paymentMethod: 'card', amountReceived: summary.payableAmount }
+            : {
+                orderId: selectedOrder.id,
+                paymentMethod: 'card',
+                amountReceived: summary.payableAmount,
+                cardHolderName: cardHolderName.trim(),
+                cardLast4: cardLast4.trim(),
+                cardExpiry: cardExpiry.trim(),
+                cardTransactionRef: cardTransactionRef.trim() || undefined
+            }
 
         try {
             // First, process payment
@@ -138,6 +167,10 @@ const Payment = () => {
             setSelectedOrder(null)
             setCashReceived('')
             setMethod('cash')
+            setCardHolderName('')
+            setCardLast4('')
+            setCardExpiry('')
+            setCardTransactionRef('')
 
             // Refresh orders list
             fetchAllOrders()
@@ -165,6 +198,10 @@ const Payment = () => {
             setSelectedOrder(null)
             setCashReceived('')
             setMethod('cash')
+            setCardHolderName('')
+            setCardLast4('')
+            setCardExpiry('')
+            setCardTransactionRef('')
             fetchAllOrders()
         } catch (error: any) {
             console.error('Send to kitchen error:', error)
@@ -195,9 +232,13 @@ const Payment = () => {
     if (!selectedOrder) {
         return (
             <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
-                <h1 className="text-5xl font-bold text-center mb-8 text-brand">
-                    {showAllOrders ? 'All Orders' : 'Unpaid Orders'}
-                </h1>
+                <div className="flex justify-center mb-8">
+                    <div className="inline-flex items-center rounded-2xl bg-slate-900 px-8 py-3 shadow-lg">
+                        <h1 className="text-5xl font-bold text-white">
+                            {showAllOrders ? 'All Orders' : 'Unpaid Orders'}
+                        </h1>
+                    </div>
+                </div>
 
                 {/* Filter Controls */}
                 <div className="max-w-6xl mx-auto mb-6 flex flex-wrap gap-4 items-center justify-between">
@@ -223,7 +264,7 @@ const Payment = () => {
                                     type="date"
                                     value={selectedDate}
                                     onChange={(e) => setSelectedDate(e.target.value)}
-                                    className="px-4 py-3 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-600 focus:border-brand focus:outline-none"
+                                    className="px-4 py-3 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-600 focus:border-brand focus:outline-none"
                                 />
                                 {selectedDate && (
                                     <button
@@ -283,19 +324,19 @@ const Payment = () => {
                                     </div>
 
                                     {order.customerName && (
-                                        <p className="text-white text-lg mb-2">
-                                            <span className="text-gray-400">Customer:</span> {order.customerName}
+                                        <p className="text-slate-800 dark:text-white text-lg mb-2">
+                                            <span className="text-slate-500 dark:text-gray-400">Customer:</span> {order.customerName}
                                         </p>
                                     )}
 
                                     {(order.customerPhone) && (
-                                        <p className="text-gray-300 text-sm mb-3">{order.customerPhone}</p>
+                                        <p className="text-slate-600 dark:text-gray-300 text-sm mb-3">{order.customerPhone}</p>
                                     )}
 
-                                    <div className="border-t border-gray-700 pt-4 mt-4">
+                                    <div className="border-t border-gray-300 dark:border-gray-700 pt-4 mt-4">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-gray-400">Total:</span>
-                                            <span className="text-3xl font-bold text-green-300">
+                                            <span className="text-slate-500 dark:text-gray-400">Total:</span>
+                                            <span className="text-3xl font-bold text-green-600 dark:text-green-300">
                                                 Rs {order.total ? order.total.toFixed(2) : '0.00'}
                                             </span>
                                         </div>
@@ -338,6 +379,10 @@ const Payment = () => {
                         setSelectedOrder(null)
                         setCashReceived('')
                         setMethod('cash')
+                        setCardHolderName('')
+                        setCardLast4('')
+                        setCardExpiry('')
+                        setCardTransactionRef('')
                     }}
                     className="px-6 py-3 bg-gray-200 dark:bg-slate-800 hover:bg-gray-300 dark:hover:bg-slate-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-slate-600"
                 >
@@ -345,17 +390,21 @@ const Payment = () => {
                 </button>
             </div>
 
-            <h1 className="text-5xl font-bold text-center mb-8 text-brand">Payment</h1>
+            <div className="flex justify-center mb-8">
+                <div className="inline-flex items-center rounded-2xl bg-slate-900 px-8 py-3 shadow-lg">
+                    <h1 className="text-5xl font-bold text-white">Payment</h1>
+                </div>
+            </div>
 
-            <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 rounded-3xl shadow-xl p-8">
+            <div className="max-w-4xl mx-auto bg-gray-50 dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 rounded-3xl shadow-xl p-8">
                 {/* Order Info */}
                 <div className="mb-8">
                     <h2 className="text-3xl font-bold text-brand">
                         {order.kotToken || `Order #${order.orderNo || 'N/A'}`}
                     </h2>
-                    <p className="text-xl mt-2 text-white">
-                        Customer: <span className="text-gray-300">{order.customerName || 'Walk-in'}</span>
-                        {order.customerPhone && <> • <span className="text-gray-300">{order.customerPhone}</span></>}
+                    <p className="text-xl mt-2 text-slate-800 dark:text-white">
+                        Customer: <span className="text-slate-600 dark:text-gray-300">{order.customerName || 'Walk-in'}</span>
+                        {order.customerPhone && <> • <span className="text-slate-600 dark:text-gray-300">{order.customerPhone}</span></>}
                     </p>
                     <p className="text-2xl font-bold mt-4">
                         <span className={`${order.paymentStatus === 'paid' ? 'text-green-300' : 'text-red-400'}`}>
@@ -366,12 +415,12 @@ const Payment = () => {
 
                 {/* Items */}
                 <div className="border-t border-gray-700 pt-4 space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-300 mb-3">Order Items:</h3>
+                    <h3 className="text-lg font-semibold text-slate-700 dark:text-gray-300 mb-3">Order Items:</h3>
                     {order.items && order.items.length > 0 ? (
                         order.items.map((item, i) => (
-                            <div key={i} className="flex justify-between text-lg bg-gray-100 dark:bg-slate-700 rounded-lg p-4">
-                                <span className="text-white">{item.qty} × {item.sizeName} {item.menuItemName}</span>
-                                <span className="text-green-300 font-bold">Rs {(item.basePrice * item.qty).toFixed(2)}</span>
+                            <div key={i} className="flex justify-between text-lg bg-gray-200 dark:bg-slate-700 rounded-lg p-4">
+                                <span className="text-slate-900 dark:text-white">{item.qty} × {item.sizeName} {item.menuItemName}</span>
+                                <span className="text-green-700 dark:text-green-300 font-bold">Rs {(item.basePrice * item.qty).toFixed(2)}</span>
                             </div>
                         ))
                     ) : (
@@ -382,8 +431,8 @@ const Payment = () => {
                 <div className="border-t-2 border-brand mt-6 pt-6">
                     <div className="space-y-3">
                         <div className="flex justify-between text-lg font-semibold">
-                            <span className="text-gray-300">Subtotal</span>
-                            <span className="text-gray-100">Rs {discountSummary.subtotal.toFixed(2)}</span>
+                            <span className="text-slate-700 dark:text-gray-300">Subtotal</span>
+                            <span className="text-slate-900 dark:text-gray-100">Rs {discountSummary.subtotal.toFixed(2)}</span>
                         </div>
 
                         {discountSummary.discounts.map((discount) => (
@@ -401,8 +450,8 @@ const Payment = () => {
                         )}
 
                         <div className="flex justify-between text-3xl font-bold border-t border-brand pt-4">
-                            <span className="text-gray-300">Payable Total</span>
-                            <span className="text-green-300">Rs {discountSummary.payableAmount.toFixed(2)}</span>
+                            <span className="text-slate-700 dark:text-gray-300">Payable Total</span>
+                            <span className="text-green-700 dark:text-green-300">Rs {discountSummary.payableAmount.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
@@ -435,7 +484,7 @@ const Payment = () => {
                                     onClick={() => setMethod('cash')}
                                     className={`py-8 text-3xl font-bold rounded-lg border-2 transition ${method === 'cash'
                                         ? 'bg-brand text-white border-brand'
-                                        : 'bg-gray-800 text-gray-300 border-gray-600 hover:border-brand'
+                                        : 'bg-gray-200 text-gray-800 border-gray-300 hover:border-brand dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600'
                                         }`}
                                 >
                                     Cash
@@ -444,10 +493,10 @@ const Payment = () => {
                                     onClick={() => setMethod('card')}
                                     className={`py-8 text-3xl font-bold rounded-lg border-2 transition ${method === 'card'
                                         ? 'bg-brand text-white border-brand'
-                                        : 'bg-gray-800 text-gray-300 border-gray-600 hover:border-brand'
+                                        : 'bg-gray-200 text-gray-800 border-gray-300 hover:border-brand dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600'
                                         }`}
                                 >
-                                    Card / Mobile
+                                    Card
                                 </button>
                             </div>
                         </div>
@@ -460,7 +509,7 @@ const Payment = () => {
                                     type="number"
                                     value={cashReceived}
                                     onChange={(e) => setCashReceived(e.target.value)}
-                                    className="w-full mt-3 px-6 py-6 text-4xl border-2 rounded-lg bg-gray-800 text-white border-gray-600 focus:border-brand focus:outline-none"
+                                    className="w-full mt-3 px-6 py-6 text-4xl border-2 rounded-lg bg-gray-100 text-gray-900 border-gray-300 focus:border-brand focus:outline-none dark:bg-gray-800 dark:text-white dark:border-gray-600"
                                     placeholder="0.00"
                                 />
                                 {cashReceived && change >= 0 && (
@@ -473,6 +522,68 @@ const Payment = () => {
                                         Need Rs {Math.abs(change).toFixed(2)} more to complete payment.
                                     </p>
                                 )}
+                            </div>
+                        )}
+
+                        {/* Card Details */}
+                        {method === 'card' && (
+                            <div className="mt-8 space-y-4">
+                                <p className="text-xl text-blue-300 font-semibold">
+                                    Card payment will be charged for the exact payable amount.
+                                </p>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-lg text-white">Card Holder Name</label>
+                                        <input
+                                            type="text"
+                                            value={cardHolderName}
+                                            onChange={(e) => setCardHolderName(e.target.value)}
+                                            className="w-full mt-2 px-5 py-4 text-xl border-2 rounded-lg bg-gray-800 text-white border-gray-600 focus:border-brand focus:outline-none"
+                                            placeholder="Name on card"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-lg text-white">Last 4 Digits</label>
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            maxLength={4}
+                                            value={cardLast4}
+                                            onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                                            className="w-full mt-2 px-5 py-4 text-xl border-2 rounded-lg bg-gray-800 text-white border-gray-600 focus:border-brand focus:outline-none"
+                                            placeholder="1234"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-lg text-white">Expiry</label>
+                                        <input
+                                            type="text"
+                                            value={cardExpiry}
+                                            onChange={(e) => setCardExpiry(e.target.value)}
+                                            className="w-full mt-2 px-5 py-4 text-xl border-2 rounded-lg bg-gray-800 text-white border-gray-600 focus:border-brand focus:outline-none"
+                                            placeholder="MM/YY"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-lg text-white">Transaction Reference</label>
+                                        <input
+                                            type="text"
+                                            value={cardTransactionRef}
+                                            onChange={(e) => setCardTransactionRef(e.target.value)}
+                                            className="w-full mt-2 px-5 py-4 text-xl border-2 rounded-lg bg-gray-800 text-white border-gray-600 focus:border-brand focus:outline-none"
+                                            placeholder="Optional reference"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="rounded-xl border border-blue-500/40 bg-blue-500/10 p-4 text-blue-100">
+                                    <p className="font-semibold">Charge amount: Rs {discountSummary.payableAmount.toFixed(2)}</p>
+                                    <p className="text-sm mt-1 text-blue-200/80">No change is returned for card payments.</p>
+                                </div>
                             </div>
                         )}
 

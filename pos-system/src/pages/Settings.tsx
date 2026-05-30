@@ -6,6 +6,7 @@ import {
     saveDiscountSettings
 } from '../utils/discounts'
 import type { DiscountSettings } from '../utils/discounts'
+import { getApiUrl } from '../services/api'
 
 const monthLabels: Array<{ key: keyof DiscountSettings['monthlyDiscounts']; label: string }> = [
     { key: 'january', label: 'January' },
@@ -27,7 +28,29 @@ const Settings = () => {
     const [saveMessage, setSaveMessage] = useState('')
 
     useEffect(() => {
-        setDiscountSettings(getDiscountSettings())
+        const loadSettings = async () => {
+            try {
+                const res = await fetch(getApiUrl('/discount-settings'))
+                if (!res.ok) throw new Error('Failed to load shared discount settings')
+
+                const data = await res.json()
+                const merged = {
+                    ...defaultDiscountSettings,
+                    ...data,
+                    monthlyDiscounts: {
+                        ...defaultDiscountSettings.monthlyDiscounts,
+                        ...(data.monthlyDiscounts || {})
+                    }
+                }
+
+                setDiscountSettings(merged)
+                saveDiscountSettings(merged)
+            } catch {
+                setDiscountSettings(getDiscountSettings())
+            }
+        }
+
+        void loadSettings()
     }, [])
 
     const activeMonthlyOffers = useMemo(
@@ -58,9 +81,23 @@ const Settings = () => {
         }))
     }
 
-    const handleSave = () => {
+    const handleSave = async () => {
         saveDiscountSettings(discountSettings)
-        setSaveMessage('Discount settings saved successfully.')
+        try {
+            const res = await fetch(getApiUrl('/discount-settings'), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(discountSettings)
+            })
+
+            if (!res.ok) {
+                throw new Error('Failed to sync discount settings')
+            }
+
+            setSaveMessage('Discount settings saved and synced successfully.')
+        } catch {
+            setSaveMessage('Discount settings saved locally. Backend sync failed.')
+        }
         setTimeout(() => setSaveMessage(''), 2500)
     }
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ChefHat, Clock, AlertCircle, Package, AlertOctagon, Plus } from 'lucide-react'
+import { Clock, AlertCircle, Package, AlertOctagon, Plus } from 'lucide-react'
 
 interface Order {
     id: string
@@ -144,11 +144,9 @@ const KitchenStatus = () => {
             {/* HEADER */}
             <header className="text-center py-8 border-b border-gray-800">
                 <div className="flex items-center justify-center gap-4 mb-3">
-                    <ChefHat className="w-10 h-10 text-yellow-400" />
                     <h1 className="text-5xl font-bold text-white">
                         Kitchen Display System
                     </h1>
-                    <ChefHat className="w-10 h-10 text-yellow-400" />
                 </div>
                 <p className="text-lg text-gray-400">
                     {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} • {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -174,7 +172,7 @@ const KitchenStatus = () => {
                 <div className="max-w-screen-2xl mx-auto px-12 py-8 pb-24">
                     <div className="grid grid-cols-3 gap-14 items-start">
                         {/* PENDING COLUMN */}
-                        <div className="bg-gradient-to-b from-red-200 to-red-100 dark:from-red-200/30 dark:to-red-100/20 rounded-2xl p-6 shadow-lg border-2 border-red-300">
+                        <div className="bg-linear-to-b from-red-200 to-red-100 dark:from-red-200/30 dark:to-red-100/20 rounded-2xl p-6 shadow-lg border-2 border-red-300">
                             <h2 className="text-2xl font-bold text-red-700 dark:text-red-300 text-center mb-6 flex items-center justify-center gap-2">
                                 <AlertCircle className="w-6 h-6" />
                                 PENDING ({pending.length})
@@ -214,7 +212,7 @@ const KitchenStatus = () => {
                                                     const imageUrl = item.mediaUrl || item.item?.mediaUrl || getMenuItemImage(itemName)
                                                     return (
                                                         <div key={idx} className="bg-red-50 dark:bg-black/30 rounded-lg px-4 py-3 flex gap-3 items-center">
-                                                            <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                                            <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                                                                 {imageUrl ? (
                                                                     <img src={imageUrl} alt={itemName} className="w-full h-full object-cover" />
                                                                 ) : (
@@ -244,7 +242,7 @@ const KitchenStatus = () => {
                         </div>
 
                         {/* PREPARING COLUMN */}
-                        <div className="bg-gradient-to-b from-orange-200 to-orange-100 dark:from-orange-200/30 dark:to-orange-100/20 rounded-2xl p-6 shadow-lg border-2 border-orange-300">
+                        <div className="bg-linear-to-b from-orange-200 to-orange-100 dark:from-orange-200/30 dark:to-orange-100/20 rounded-2xl p-6 shadow-lg border-2 border-orange-300">
                             <h2 className="text-2xl font-bold text-orange-700 dark:text-orange-300 text-center mb-6 flex items-center justify-center gap-2">
                                 <Clock className="w-6 h-6" />
                                 PREPARING ({preparing.length})
@@ -284,7 +282,7 @@ const KitchenStatus = () => {
                                                     const imageUrl = item.mediaUrl || item.item?.mediaUrl || getMenuItemImage(itemName)
                                                     return (
                                                         <div key={idx} className="bg-orange-50 dark:bg-black/30 rounded-lg px-4 py-3 flex gap-3 items-center">
-                                                            <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                                            <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                                                                 {imageUrl ? (
                                                                     <img src={imageUrl} alt={itemName} className="w-full h-full object-cover" />
                                                                 ) : (
@@ -314,7 +312,7 @@ const KitchenStatus = () => {
                         </div>
 
                         {/* READY COLUMN */}
-                        <div className="bg-gradient-to-b from-green-200 to-green-100 dark:from-green-200/30 dark:to-green-100/20 rounded-2xl p-6 shadow-lg border-2 border-green-300">
+                        <div className="bg-linear-to-b from-green-200 to-green-100 dark:from-green-200/30 dark:to-green-100/20 rounded-2xl p-6 shadow-lg border-2 border-green-300">
                             <h2 className="text-2xl font-bold text-green-700 dark:text-green-300 text-center mb-6 flex items-center justify-center gap-2">
                                 <Package className="w-6 h-6" />
                                 READY ({ready.length})
@@ -354,7 +352,7 @@ const KitchenStatus = () => {
                                                     const imageUrl = item.mediaUrl || item.item?.mediaUrl || getMenuItemImage(itemName)
                                                     return (
                                                         <div key={idx} className="bg-green-50 dark:bg-black/30 rounded-lg px-4 py-3 flex gap-3 items-center">
-                                                            <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                                            <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                                                                 {imageUrl ? (
                                                                     <img src={imageUrl} alt={itemName} className="w-full h-full object-cover" />
                                                                 ) : (

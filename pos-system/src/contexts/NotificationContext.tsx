@@ -27,6 +27,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [lowStockItems, setLowStockItems] = useState<Set<string>>(new Set())
     const [readyOrders, setReadyOrders] = useState<Set<string>>(new Set())
+    const [servedOrders, setServedOrders] = useState<Set<string>>(new Set())
 
     // Sound effect for notifications
     const playNotificationSound = useCallback(() => {
@@ -119,7 +120,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return () => clearInterval(interval)
     }, [lowStockItems, notifications, playNotificationSound])
 
-    // Check for ready orders in kitchen
+    // Check for ready and served orders in kitchen
     useEffect(() => {
         const checkKitchenOrders = async () => {
             try {
@@ -127,6 +128,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 if (res.ok) {
                     const orders = await res.json()
                     const currentReadyIds = new Set<string>()
+                    const currentServedIds = new Set<string>()
 
                     orders.forEach((order: any) => {
                         if (order.status === 'ready') {
@@ -149,10 +151,29 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                 playNotificationSound()
                                 // Toast removed - notification shown in notification bar only
                             }
+                        } else if (order.status === 'served') {
+                            currentServedIds.add(order.id)
+
+                            if (!servedOrders.has(order.id)) {
+                                const orderLabel = order.kotToken || `Order #${order.orderNo || order.id.slice(-6).toUpperCase()}`
+                                const tableInfo = order.tableNumber || order.table || (order.tableId ? `Table ${order.tableId}` : 'Takeaway')
+
+                                const newNotification: Notification = {
+                                    id: `served-${order.id}-${Date.now()}`,
+                                    message: `🍽️ ${orderLabel} has been served for ${tableInfo}`,
+                                    type: 'kitchen',
+                                    timestamp: new Date(),
+                                    read: false,
+                                    persistent: false
+                                }
+                                setNotifications(prev => [newNotification, ...prev])
+                                playNotificationSound()
+                            }
                         }
                     })
 
                     setReadyOrders(currentReadyIds)
+                    setServedOrders(currentServedIds)
                 }
             } catch (err) {
                 console.error('Failed to check kitchen orders:', err)
@@ -162,7 +183,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         checkKitchenOrders()
         const interval = setInterval(checkKitchenOrders, 5000) // Check every 5 seconds
         return () => clearInterval(interval)
-    }, [readyOrders, playNotificationSound])
+    }, [readyOrders, servedOrders, playNotificationSound])
 
     // Simulate incoming notifications (connect to WebSocket or polling in production)
     useEffect(() => {

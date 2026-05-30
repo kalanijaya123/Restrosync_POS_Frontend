@@ -137,7 +137,7 @@ const OrderSummary = () => {
 
                     {/* HEADER */}
                     <div className="text-center mb-10">
-                        <h1 className="text-4xl font-extrabold text-brand">
+                        <h1 className="text-4xl font-extrabold text-white">
                             Order History
                         </h1>
                         <p className="text-gray-400 mt-2">Click any date to view orders</p>
@@ -219,7 +219,7 @@ const OrderSummary = () => {
                                         <div key={i} className="bg-white/5 rounded-xl p-5 border border-white/10">
                                             <div className="flex justify-between items-center gap-4">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-700 flex items-center justify-center">
+                                                    <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-gray-700 flex items-center justify-center">
                                                         {imageUrl ? (
                                                             <img src={imageUrl} alt={itemName} className="w-full h-full object-cover" />
                                                         ) : (

@@ -42,7 +42,7 @@ const Sidebar = () => {
                         <ChefHat className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                        <h1 className={`text-3xl! font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>RestroSync</h1>
+                        <h1 className="text-3xl! font-black tracking-tight text-gray-900">RestroSync</h1>
                         <p className="text-sm text-gray-500">Point of Sale</p>
                     </div>
                 </div>
@@ -64,7 +64,6 @@ const Sidebar = () => {
             <nav className="flex-1 p-4 overflow-y-auto">
                 <ul className="space-y-2">
                     {menuItems.map((item) => {
-                        const Icon = item.icon
                         return (
                             <li key={item.to}>
                                 <NavLink to={item.to}>
@@ -72,12 +71,9 @@ const Sidebar = () => {
                                         <div
                                             className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${isActive
                                                 ? 'bg-brand text-white shadow-2xl shadow-brand/50'
-                                                : theme === 'dark'
-                                                    ? 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                                                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                                                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                                                 }`}
                                         >
-                                            <Icon className="w-5 h-5" />
                                             <span>{item.label}</span>
                                             {isActive && (
                                                 <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>

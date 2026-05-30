@@ -304,7 +304,9 @@ const MenuManager = () => {
             <Toaster position="top-center" />
             <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-black font-extrabold text-brand">PRO MENU MANAGER</h1>
+                    <div className="inline-flex items-center rounded-2xl bg-slate-900 px-6 py-3 shadow-lg">
+                        <h1 className="text-4xl font-black font-extrabold text-white">PRO MENU MANAGER</h1>
+                    </div>
                     <p className="text-lg mt-2 text-gray-300">Recipe • Extras • Sizes • Image • Inventory Sync</p>
                     {editingId && (
                         <div className="mt-4 flex items-center justify-center gap-3">
