@@ -19,6 +19,7 @@ interface MenuItem {
     mediaUrl?: string
     recipe?: RecipeItem[]
     extras?: ExtraItem[]
+    mealPeriods?: string[]
 }
 interface SelectedExtra { extraId: string; name: string; price: number; qty: number }
 interface InventoryItem {
@@ -44,10 +45,33 @@ interface CartItem {
     totalPrice: number
 }
 
+const MEAL_PERIODS = ['All Day', 'Breakfast', 'Lunch', 'Dinner'] as const
+const SERVICE_PERIODS = ['Breakfast', 'Lunch', 'Dinner'] as const
+
+const normalizeMealPeriods = (mealPeriods?: string[] | null) => {
+    const cleaned = Array.from(new Set((mealPeriods || [])
+        .map(period => period.trim())
+        .filter(Boolean)
+        .filter(period => period === 'All Day' || SERVICE_PERIODS.includes(period as any))))
+
+    if (cleaned.length === 0 || cleaned.includes('All Day') || cleaned.length === SERVICE_PERIODS.length) {
+        return [...SERVICE_PERIODS]
+    }
+
+    return SERVICE_PERIODS.filter(period => cleaned.includes(period))
+}
+
+const matchesMealPeriod = (mealPeriods: string[] | undefined, selectedPeriod: typeof MEAL_PERIODS[number]) => {
+    if (selectedPeriod === 'All Day') return true
+    const normalized = normalizeMealPeriods(mealPeriods)
+    return normalized.includes(selectedPeriod)
+}
+
 const OrderEntry = () => {
     const [menu, setMenu] = useState<MenuItem[]>([])
     const [inventory, setInventory] = useState<InventoryItem[]>([])
     const [cart, setCart] = useState<CartItem[]>([])
+    const [selectedMealPeriod, setSelectedMealPeriod] = useState<typeof MEAL_PERIODS[number]>('All Day')
     const [selectedCategory, setSelectedCategory] = useState('All')
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
@@ -77,6 +101,10 @@ const OrderEntry = () => {
         }
     }, [])
 
+    useEffect(() => {
+        setSelectedCategory('All')
+    }, [selectedMealPeriod])
+
     const fetchTableDetails = async () => {
         try {
             const res = await fetch(`http://localhost:8080/api/tables/${tableId}`)
@@ -99,7 +127,8 @@ const OrderEntry = () => {
                 ...item,
                 sizes: Array.isArray(item.sizes) ? item.sizes : [],
                 recipe: Array.isArray(item.recipe) ? item.recipe : [],
-                extras: Array.isArray(item.extras) ? item.extras : []
+                extras: Array.isArray(item.extras) ? item.extras : [],
+                mealPeriods: Array.isArray(item.mealPeriods) ? item.mealPeriods : []
             })) : []
             setMenu(safeData)
         } catch (err) {
@@ -122,9 +151,12 @@ const OrderEntry = () => {
         }
     }
 
-    const categories = ['All', ...Array.from(new Set(menu.map(m => m.category || 'Uncategorized')))]
+    const categories = ['All', ...Array.from(new Set(menu
+        .filter(item => matchesMealPeriod(item.mealPeriods, selectedMealPeriod))
+        .map(m => m.category || 'Uncategorized')))]
 
     const filteredMenu = menu
+        .filter(item => matchesMealPeriod(item.mealPeriods, selectedMealPeriod))
         .filter(item => selectedCategory === 'All' || item.category === selectedCategory)
         .filter(item => item.name?.toLowerCase().includes(searchQuery.toLowerCase()))
 
@@ -453,6 +485,17 @@ const OrderEntry = () => {
                         <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                             className="w-full max-w-2xl mx-auto block px-4 py-3 rounded-2xl bg-white/10 text-lg mb-6" />
 
+                        <div className="flex gap-3 flex-wrap justify-center mb-4">
+                            {MEAL_PERIODS.map(period => (
+                                <button
+                                    key={period}
+                                    onClick={() => setSelectedMealPeriod(period)}
+                                    className={`px-4 py-2 rounded-full text-base font-semibold ${selectedMealPeriod === period ? 'bg-cyan-600 text-white' : 'bg-white/10'}`}>
+                                    {period}
+                                </button>
+                            ))}
+                        </div>
+
                         <div className="flex gap-4 flex-wrap justify-center mb-12">
                             {categories.map(cat => (
                                 <button key={cat} onClick={() => setSelectedCategory(cat)}
@@ -472,6 +515,10 @@ const OrderEntry = () => {
                                     }
                                     <div className="p-4">
                                         <h3 className="text-xl font-semibold text-blue-300 text-center mb-4">{item.name}</h3>
+                                        <div className="flex flex-wrap justify-center gap-2 mb-3">
+                                            <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-cyan-300">{normalizeMealPeriods(item.mealPeriods).length === SERVICE_PERIODS.length ? 'All Day' : normalizeMealPeriods(item.mealPeriods).join(', ')}</span>
+                                            <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-purple-300">{item.category}</span>
+                                        </div>
                                         <div className="space-y-3">
                                             {(item.sizes || []).map(size => (
                                                 <button key={size.name}

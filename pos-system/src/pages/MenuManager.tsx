@@ -39,6 +39,27 @@ interface MenuItem {
     mediaUrl?: string
     recipe: RecipeItem[]
     extras: ExtraItem[]
+    mealPeriods?: string[]
+}
+
+const MEAL_PERIODS = ['Breakfast', 'Lunch', 'Dinner'] as const
+
+const normalizeMealPeriods = (mealPeriods?: string[] | null) => {
+    const cleaned = Array.from(new Set((mealPeriods || [])
+        .map(period => period.trim())
+        .filter(Boolean)
+        .filter(period => period === 'All Day' || MEAL_PERIODS.includes(period as any))))
+
+    if (cleaned.length === 0 || cleaned.includes('All Day') || cleaned.length === MEAL_PERIODS.length) {
+        return [...MEAL_PERIODS]
+    }
+
+    return MEAL_PERIODS.filter(period => cleaned.includes(period))
+}
+
+const mealPeriodLabel = (mealPeriods?: string[] | null) => {
+    const normalized = normalizeMealPeriods(mealPeriods)
+    return normalized.length === MEAL_PERIODS.length ? 'All Day' : normalized.join(', ')
 }
 
 // CHANGE THESE TO YOUR CLOUDINARY ACCOUNT
@@ -50,6 +71,7 @@ const MenuManager = () => {
     const [inventory, setInventory] = useState<InventoryItem[]>([])
     const [categories, setCategories] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
+    const [mealPeriods, setMealPeriods] = useState<string[]>([...MEAL_PERIODS])
 
     // Form state
     const [editingId, setEditingId] = useState<string | null>(null)
@@ -107,7 +129,7 @@ const MenuManager = () => {
             setInventory(Array.isArray(invData) ? invData : [])
 
             const cats = [...new Set((Array.isArray(menuData) ? menuData : []).map((m: MenuItem) => m.category))].sort()
-            setCategories(cats.length > 0 ? cats : ['Starters', 'Mains', 'Kottu', 'Rice', 'Beverages'])
+            setCategories(cats.length > 0 ? cats : ['Beverages', 'Biriyani', 'Curries', 'Rice', 'Snacks'])
             if (cats.length > 0) setCategory(cats[0])
         } catch (error: any) {
             console.error('Failed to load data:', error)
@@ -115,7 +137,7 @@ const MenuManager = () => {
             // Set safe defaults
             setMenu([])
             setInventory([])
-            setCategories(['Starters', 'Mains', 'Kottu', 'Rice', 'Beverages'])
+            setCategories(['Beverages', 'Biriyani', 'Curries', 'Rice', 'Snacks'])
         } finally {
             setLoading(false)
         }
@@ -141,6 +163,7 @@ const MenuManager = () => {
     const handleSubmit = async () => {
         if (!name.trim()) return toast.error('Enter dish name')
         if (!category) return toast.error('Select category')
+        if (mealPeriods.length === 0) return toast.error('Select at least one meal period')
         if (sizes.every(s => s.price <= 0)) return toast.error('Set at least one price')
 
         setUploading(true)
@@ -163,6 +186,7 @@ const MenuManager = () => {
         const payload = {
             name: name.trim(),
             category: category.trim(),
+            mealPeriods: normalizeMealPeriods(mealPeriods),
             sizes: sizes.filter(s => s.name && s.name.trim() && s.price > 0).map(s => ({
                 name: s.name.trim(),
                 price: Number(s.price)
@@ -210,6 +234,7 @@ const MenuManager = () => {
         setEditingId(item.id)
         setName(item.name)
         setCategory(item.category)
+        setMealPeriods(normalizeMealPeriods(item.mealPeriods))
         setSizes(item.sizes.length > 0 ? item.sizes : [{ name: 'Small', price: 0 }, { name: 'Regular', price: 0 }, { name: 'Large', price: 0 }])
         setRecipe(item.recipe || [])
         setExtras(item.extras || [])
@@ -280,6 +305,7 @@ const MenuManager = () => {
         setEditingId(null)
         setName('')
         setCategory('')
+        setMealPeriods([...MEAL_PERIODS])
         setSizes([{ name: 'Small', price: 0 }, { name: 'Regular', price: 0 }, { name: 'Large', price: 0 }])
         setRecipe([])
         setExtras([])
@@ -305,7 +331,7 @@ const MenuManager = () => {
             <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center rounded-2xl bg-slate-900 px-6 py-3 shadow-lg">
-                        <h1 className="text-4xl font-black font-extrabold text-white">PRO MENU MANAGER</h1>
+                        <h1 className="text-4xl font-extrabold text-white">PRO MENU MANAGER</h1>
                     </div>
                     <p className="text-lg mt-2 text-gray-300">Recipe • Extras • Sizes • Image • Inventory Sync</p>
                     {editingId && (
@@ -366,6 +392,40 @@ const MenuManager = () => {
                                 >
                                     Add
                                 </button>
+                            </div>
+
+                            <div className="bg-white/10 rounded-xl p-4 space-y-3">
+                                <div>
+                                    <h3 className="text-lg font-bold text-cyan-300">Meal Period</h3>
+                                    <p className="text-sm text-gray-300">Select one or more service periods.</p>
+                                </div>
+                                <div className="flex flex-wrap gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setMealPeriods([...MEAL_PERIODS])}
+                                        className={`px-4 py-2 rounded-full font-semibold ${mealPeriods.length === MEAL_PERIODS.length ? 'bg-cyan-500 text-white' : 'bg-white/10 text-white'}`}
+                                    >
+                                        All Day
+                                    </button>
+                                    {MEAL_PERIODS.map(period => {
+                                        const active = mealPeriods.includes(period)
+                                        return (
+                                            <button
+                                                key={period}
+                                                type="button"
+                                                onClick={() => setMealPeriods(prev => {
+                                                    const next = prev.includes(period)
+                                                        ? prev.filter(item => item !== period)
+                                                        : [...prev, period]
+                                                    return next.length === 0 ? [...MEAL_PERIODS] : next
+                                                })}
+                                                className={`px-4 py-2 rounded-full font-semibold ${active ? 'bg-emerald-500 text-white' : 'bg-white/10 text-white'}`}
+                                            >
+                                                {period}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
                             </div>
 
                             {/* SIZES */}
@@ -559,13 +619,14 @@ const MenuManager = () => {
                                 {item.mediaUrl ? (
                                     <img src={item.mediaUrl} alt={item.name} className="w-full h-64 object-cover" />
                                 ) : (
-                                    <div className="h-64 bg-gradient-to-br from-purple-800 to-pink-800 flex items-center justify-center">
+                                    <div className="h-64 bg-linear-to-br from-purple-800 to-pink-800 flex items-center justify-center">
                                         <Package className="w-20 h-20 text-white/20" />
                                     </div>
                                 )}
                                 <div className="p-6">
                                     <h3 className="text-3xl font-bold text-blue-300">{item.name}</h3>
                                     <p className="text-purple-300 text-lg">{item.category}</p>
+                                    <p className="text-cyan-300 text-sm font-semibold mt-1">{mealPeriodLabel(item.mealPeriods)}</p>
 
                                     <div className="mt-4 space-y-3">
                                         {sortSizes(item.sizes || []).map(s => (
