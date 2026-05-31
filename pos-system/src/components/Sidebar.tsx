@@ -10,6 +10,19 @@ import { useTheme } from '../contexts/ThemeContext'
 const Sidebar = () => {
     const { theme } = useTheme()
     const [currentTime, setCurrentTime] = useState(new Date())
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
+    const isManager = currentUser?.role === 'Manager'
+    const canAccessPos = isManager || Boolean(
+        currentUser?.canAccessPos ||
+        currentUser?.canManageMenu ||
+        currentUser?.canManageInventory ||
+        currentUser?.canAccessKitchenStatus ||
+        currentUser?.canAccessThirdPartyOrders
+    )
+    const canManageMenu = isManager || Boolean(currentUser?.canManageMenu)
+    const canManageInventory = isManager || Boolean(currentUser?.canManageInventory)
+    const canAccessKitchenStatus = isManager || Boolean(currentUser?.canAccessKitchenStatus)
+    const canAccessThirdPartyOrders = isManager || Boolean(currentUser?.canAccessThirdPartyOrders)
 
     const menuItems = [
         { to: '/tables', label: 'Table Layout', icon: Table },
@@ -17,12 +30,12 @@ const Sidebar = () => {
         { to: '/summary', label: 'Order Summary', icon: Receipt },
         { to: '/payment', label: 'Payment', icon: CreditCard },
         { to: '/manage-items', label: 'Add Items to Order', icon: Plus },
-        { to: '/manager', label: 'Manager', icon: Users },
-        { to: '/inventory', label: 'Inventory', icon: Package },
-        { to: '/status', label: 'Kitchen Status', icon: ChefHat },
-        { to: '/third-party', label: 'Third-Party', icon: Globe },
-        { to: '/menu-manager', label: 'Menu Manager', icon: Utensils },
-        { to: '/settings', label: 'Settings', icon: Settings },
+        { to: '/manager', label: 'Manager', icon: Users, managerOnly: true },
+        { to: '/inventory', label: 'Inventory', icon: Package, access: canManageInventory },
+        { to: '/status', label: 'Kitchen Status', icon: ChefHat, access: canAccessKitchenStatus },
+        { to: '/third-party', label: 'Third-Party', icon: Globe, access: canAccessThirdPartyOrders },
+        { to: '/menu-manager', label: 'Menu Manager', icon: Utensils, access: canManageMenu },
+        { to: '/settings', label: 'Settings', icon: Settings, managerOnly: true },
     ]
 
     useEffect(() => {
@@ -63,7 +76,11 @@ const Sidebar = () => {
             {/* Navigation Menu */}
             <nav className="flex-1 p-4 overflow-y-auto">
                 <ul className="space-y-2">
-                    {menuItems.map((item) => {
+                    {canAccessPos && menuItems.filter((item) => {
+                        if (item.managerOnly) return isManager
+                        if (item.access === false) return false
+                        return true
+                    }).map((item) => {
                         return (
                             <li key={item.to}>
                                 <NavLink to={item.to}>

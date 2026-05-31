@@ -130,75 +130,41 @@ const ThirdPartyOrders = () => {
     }, [orders])
 
     if (loading) {
-        return <div className="p-10 text-2xl text-gray-500">Loading online orders...</div>
+        return <div className="min-h-screen bg-black p-10 text-2xl text-gray-300">Loading online orders...</div>
     }
 
     return (
-        <div className="p-8 max-w-7xl mx-auto bg-slate-900 rounded-3xl">
-            <div className="flex items-center justify-between gap-4 mb-8">
-                <div>
-                    <div className="inline-flex items-center rounded-2xl bg-slate-900 px-6 py-3 shadow-lg">
-                        <h1 className="text-4xl font-bold text-white">Third-Party Orders</h1>
+        <div className="min-h-screen bg-black p-6 md:p-8">
+            <div className="max-w-7xl mx-auto rounded-[2rem] border border-white/10 bg-slate-950 p-6 shadow-2xl md:p-8">
+                <div className="flex items-center justify-between gap-4 mb-8">
+                    <div>
+                        <div className="inline-flex items-center rounded-2xl bg-slate-900 px-6 py-3 shadow-lg">
+                            <h1 className="text-4xl font-bold text-white">Third-Party Orders</h1>
+                        </div>
+                        <p className="text-slate-300 mt-2">Orders placed from the online ordering system</p>
                     </div>
-                    <p className="text-slate-300 mt-2">Orders placed from the online ordering system</p>
+                    <button
+                        onClick={fetchOrders}
+                        className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white/10 border border-white/15 hover:bg-white/20 text-white shadow-sm"
+                    >
+                        <RefreshCw className="w-4 h-4" /> Refresh
+                    </button>
                 </div>
-                <button
-                    onClick={fetchOrders}
-                    className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 dark:bg-white/10 dark:border-white/20 dark:hover:bg-white/20 dark:text-white"
-                >
-                    <RefreshCw className="w-4 h-4" /> Refresh
-                </button>
-            </div>
 
-            {orders.length === 0 ? (
-                <div className="rounded-3xl border border-blue-400/30 bg-blue-950/60 p-10 text-center text-blue-100">
-                    No online orders yet
-                </div>
-            ) : (
-                <div className="space-y-8">
-                    <section>
-                        <h2 className="text-xl font-semibold text-blue-100 mb-4">Pending Payment</h2>
-                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            {grouped.pending.map(order => (
-                                <OrderCard
-                                    key={order.id}
-                                    order={order}
-                                    displayOrderNumber={grouped.pending.indexOf(order) + 1}
-                                    onStatusChange={updateOrderStatus}
-                                    onAcceptOrder={acceptOrderForKitchen}
-                                    onOpenDeliveryService={openDeliveryService}
-                                    deliveryServices={deliveryServices}
-                                />
-                            ))}
-                        </div>
-                    </section>
-
-                    <section>
-                        <h2 className="text-xl font-semibold text-blue-100 mb-4">Active Orders</h2>
-                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            {grouped.active.map(order => (
-                                <OrderCard
-                                    key={order.id}
-                                    order={order}
-                                    displayOrderNumber={grouped.active.indexOf(order) + 1}
-                                    onStatusChange={updateOrderStatus}
-                                    onAcceptOrder={acceptOrderForKitchen}
-                                    onOpenDeliveryService={openDeliveryService}
-                                    deliveryServices={deliveryServices}
-                                />
-                            ))}
-                        </div>
-                    </section>
-
-                    {grouped.cancelled.length > 0 && (
+                {orders.length === 0 ? (
+                    <div className="rounded-3xl border border-white/10 bg-white/5 p-10 text-center text-slate-200 shadow-inner">
+                        No online orders yet
+                    </div>
+                ) : (
+                    <div className="space-y-8">
                         <section>
-                            <h2 className="text-xl font-semibold text-blue-100 mb-4">Cancelled</h2>
+                            <h2 className="text-xl font-semibold text-white mb-4">Pending Payment</h2>
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                {grouped.cancelled.map(order => (
+                                {grouped.pending.map(order => (
                                     <OrderCard
                                         key={order.id}
                                         order={order}
-                                        displayOrderNumber={grouped.cancelled.indexOf(order) + 1}
+                                        displayOrderNumber={grouped.pending.indexOf(order) + 1}
                                         onStatusChange={updateOrderStatus}
                                         onAcceptOrder={acceptOrderForKitchen}
                                         onOpenDeliveryService={openDeliveryService}
@@ -207,9 +173,45 @@ const ThirdPartyOrders = () => {
                                 ))}
                             </div>
                         </section>
-                    )}
-                </div>
-            )}
+
+                        <section>
+                            <h2 className="text-xl font-semibold text-white mb-4">Active Orders</h2>
+                            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                {grouped.active.map(order => (
+                                    <OrderCard
+                                        key={order.id}
+                                        order={order}
+                                        displayOrderNumber={grouped.active.indexOf(order) + 1}
+                                        onStatusChange={updateOrderStatus}
+                                        onAcceptOrder={acceptOrderForKitchen}
+                                        onOpenDeliveryService={openDeliveryService}
+                                        deliveryServices={deliveryServices}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+
+                        {grouped.cancelled.length > 0 && (
+                            <section>
+                                <h2 className="text-xl font-semibold text-white mb-4">Cancelled</h2>
+                                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                    {grouped.cancelled.map(order => (
+                                        <OrderCard
+                                            key={order.id}
+                                            order={order}
+                                            displayOrderNumber={grouped.cancelled.indexOf(order) + 1}
+                                            onStatusChange={updateOrderStatus}
+                                            onAcceptOrder={acceptOrderForKitchen}
+                                            onOpenDeliveryService={openDeliveryService}
+                                            deliveryServices={deliveryServices}
+                                        />
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
@@ -263,7 +265,9 @@ function OrderCard({
         if (order.status === 'ready') {
             return {
                 title: 'Ready for handoff',
-                primaryAction: { label: 'Order Served', status: 'served', icon: BadgeCheck },
+                primaryAction: order.deliveryType === 'delivery'
+                    ? { label: 'Out for Delivery', status: 'out_for_delivery', icon: Truck }
+                    : { label: 'Order Served', status: 'served', icon: BadgeCheck },
                 secondaryAction: null,
                 showDeliveryLinks: order.deliveryType === 'delivery'
             }
@@ -290,31 +294,31 @@ function OrderCard({
     const SecondaryIcon = actionState.secondaryAction?.icon
 
     return (
-        <div className="rounded-3xl border border-slate-200 bg-gray-100/95 p-5 shadow-lg dark:border-slate-700 dark:bg-slate-900/85">
+        <div className="rounded-3xl border border-white/10 bg-slate-900 p-5 shadow-lg">
             <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
-                    <p className="text-slate-700 dark:text-emerald-300 font-bold text-lg">Order #{displayOrderNumber}</p>
-                    <p className="text-slate-900 dark:text-white font-semibold">{order.customerName || 'Guest'}</p>
-                    <p className="text-sm text-slate-500 dark:text-gray-400 flex items-center gap-2 mt-1"><Clock3 className="w-4 h-4" /> {displayTime}</p>
+                    <p className="text-slate-300 font-bold text-lg">Order #{displayOrderNumber}</p>
+                    <p className="text-white font-semibold">{order.customerName || 'Guest'}</p>
+                    <p className="text-sm text-slate-400 flex items-center gap-2 mt-1"><Clock3 className="w-4 h-4" /> {displayTime}</p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                    <span className="rounded-full bg-white/80 px-3 py-1 text-sm font-semibold text-slate-700 border border-slate-200 dark:bg-blue-500/20 dark:text-blue-200 dark:border-transparent">
+                    <span className="rounded-full bg-sky-500/15 px-3 py-1 text-sm font-semibold text-sky-200 border border-sky-400/20">
                         {statusLabel[order.status || ''] || order.status || 'Unknown'}
                     </span>
                     <span
-                        className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide ${deliveryTypeClasses[order.deliveryType || ''] || 'border-slate-200 bg-white/80 text-slate-700 dark:border-white/20 dark:bg-white/10 dark:text-gray-200'}`}
+                        className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide ${deliveryTypeClasses[order.deliveryType || ''] || 'border-white/10 bg-white/5 text-slate-200'}`}
                     >
                         {deliveryTypeLabel[order.deliveryType || ''] || (order.deliveryType || 'Pickup')}
                     </span>
                 </div>
             </div>
 
-            <p className="mb-4 text-sm text-slate-600 dark:text-cyan-200/90">{actionState.title}</p>
+            <p className="mb-4 text-sm text-slate-300">{actionState.title}</p>
 
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-300 mb-4">
+            <div className="flex items-center gap-2 text-sm text-slate-300 mb-4">
                 {order.deliveryType === 'delivery' ? <Truck className="w-4 h-4" /> : <Package className="w-4 h-4" />}
                 <span className="capitalize">{order.deliveryType || 'pickup'}</span>
-                <span className="text-slate-400 dark:text-gray-500">•</span>
+                <span className="text-slate-500">•</span>
                 <span>{qtyTotal} items</span>
             </div>
 
@@ -324,12 +328,12 @@ function OrderCard({
                     const qty = Number(item.qty ?? item.quantity ?? 1)
                     const price = Number(item.basePrice ?? item.price ?? 0)
                     return (
-                        <div key={index} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 border border-slate-200 dark:bg-white/5 dark:border-white/10">
+                        <div key={index} className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3 border border-white/10">
                             <div>
-                                <p className="font-medium text-slate-900 dark:text-white">{qty} × {name}</p>
-                                <p className="text-xs text-slate-500 dark:text-gray-400">{order.paymentMethod || 'cash'} • {order.paymentStatus || 'pending'} payment</p>
+                                <p className="font-medium text-white">{qty} × {name}</p>
+                                <p className="text-xs text-slate-400">{order.paymentMethod || 'cash'} • {order.paymentStatus || 'pending'} payment</p>
                             </div>
-                            <p className="text-emerald-600 dark:text-emerald-300 font-semibold">Rs {(qty * price).toFixed(0)}</p>
+                            <p className="text-emerald-300 font-semibold">Rs {(qty * price).toFixed(0)}</p>
                         </div>
                     )
                 })}
@@ -339,13 +343,13 @@ function OrderCard({
                 <div className="grid grid-cols-2 gap-3 mb-4">
                     <button
                         onClick={() => onOpenDeliveryService(deliveryServices.pickme)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/20"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/20"
                     >
                         PickMe <ExternalLink className="w-4 h-4" />
                     </button>
                     <button
                         onClick={() => onOpenDeliveryService(deliveryServices.uber)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-sm font-semibold text-sky-200 hover:bg-sky-500/20"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-400/20 bg-sky-500/10 px-4 py-3 text-sm font-semibold text-sky-200 hover:bg-sky-500/20"
                     >
                         Uber <ExternalLink className="w-4 h-4" />
                     </button>
@@ -368,7 +372,7 @@ function OrderCard({
                 {actionState.secondaryAction && (
                     <button
                         onClick={() => onStatusChange(order.id, actionState.secondaryAction!.status)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 font-semibold text-red-200 hover:bg-red-500/20"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-3 font-semibold text-red-200 hover:bg-red-500/20"
                     >
                         {SecondaryIcon && <SecondaryIcon className="w-4 h-4" />}
                         {actionState.secondaryAction.label}
@@ -377,8 +381,8 @@ function OrderCard({
             </div>
 
             <div className="flex items-center justify-between border-t border-white/10 pt-4">
-                <span className="text-slate-500 dark:text-gray-400 text-sm flex items-center gap-2"><TimerReset className="w-4 h-4" /> Total</span>
-                <span className="text-2xl font-bold text-emerald-400">Rs {(order.total || 0).toFixed(0)}</span>
+                <span className="text-slate-400 text-sm flex items-center gap-2"><TimerReset className="w-4 h-4" /> Total</span>
+                <span className="text-2xl font-bold text-emerald-300">Rs {(order.total || 0).toFixed(0)}</span>
             </div>
         </div>
     )

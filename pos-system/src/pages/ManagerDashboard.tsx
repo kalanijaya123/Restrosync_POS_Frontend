@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { getApiUrl } from '../services/api'
 
 type Order = {
@@ -14,12 +14,31 @@ type DailySales = {
     sales: number
 }
 
+type StaffUser = {
+    id: string
+    username: string
+    email?: string
+    role?: string
+    canAccessPos?: boolean
+    canAccessKds?: boolean
+    canAccessOnlineOrder?: boolean
+    canManageDiscounts?: boolean
+    canManageMenu?: boolean
+    canManageInventory?: boolean
+    canAccessKitchenStatus?: boolean
+    canAccessThirdPartyOrders?: boolean
+}
+
 const ManagerDashboard = () => {
     const [stats, setStats] = useState({ sales: 0, orders: 0, avg: 0 })
     const [history, setHistory] = useState<DailySales[]>([])
+    const [staffUsers, setStaffUsers] = useState<StaffUser[]>([])
+    const [savingUserId, setSavingUserId] = useState('')
     const [loading, setLoading] = useState(true)
-    const [selectedMonth, setSelectedMonth] = useState('all')
-    const [selectedDay, setSelectedDay] = useState('all')
+    const [selectedDate, setSelectedDate] = useState('')
+    const [sortMode, setSortMode] = useState<'newest' | 'oldest'>('newest')
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
+    const isManager = currentUser?.role === 'Manager'
 
     const parseCreatedAt = (value: string | number[] | undefined): Date | null => {
         if (!value) return null
@@ -114,23 +133,76 @@ const ManagerDashboard = () => {
         fetchDashboardData()
     }, [])
 
-    const availableMonths = Array.from(new Set(history.map((day) => day.dateKey.slice(0, 7))))
+    useEffect(() => {
+        const fetchStaffUsers = async () => {
+            if (!isManager || !currentUser?.id) return
 
-    const availableDays = history
-        .filter((day) => selectedMonth === 'all' || day.dateKey.startsWith(`${selectedMonth}-`))
-        .map((day) => day.dateKey)
+            try {
+                const response = await fetch(getApiUrl('/users/staff'), {
+                    headers: { userId: currentUser.id }
+                })
 
-    const filteredHistory = history.filter((day) => {
-        const monthMatches = selectedMonth === 'all' || day.dateKey.startsWith(`${selectedMonth}-`)
-        const dayMatches = selectedDay === 'all' || day.dateKey === selectedDay
-        return monthMatches && dayMatches
-    })
+                if (!response.ok) throw new Error('Failed to load staff users')
+
+                const data = await response.json()
+                setStaffUsers(Array.isArray(data) ? data : [])
+            } catch {
+                setStaffUsers([])
+            }
+        }
+
+        fetchStaffUsers()
+    }, [currentUser?.id, isManager])
+
+    const updatePermission = async (userId: string, field: keyof StaffUser, value: boolean) => {
+        if (!currentUser?.id) return
+
+        setSavingUserId(userId)
+        try {
+            const target = staffUsers.find((user) => user.id === userId)
+            const response = await fetch(getApiUrl(`/users/${userId}/permissions`), {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    userId: currentUser.id
+                },
+                body: JSON.stringify({
+                    canAccessPos: field === 'canAccessPos' ? value : target?.canAccessPos,
+                    canAccessKds: field === 'canAccessKds' ? value : target?.canAccessKds,
+                    canAccessOnlineOrder: field === 'canAccessOnlineOrder' ? value : target?.canAccessOnlineOrder,
+                    canManageDiscounts: field === 'canManageDiscounts' ? value : target?.canManageDiscounts,
+                    canManageMenu: field === 'canManageMenu' ? value : target?.canManageMenu,
+                    canManageInventory: field === 'canManageInventory' ? value : target?.canManageInventory,
+                    canAccessKitchenStatus: field === 'canAccessKitchenStatus' ? value : target?.canAccessKitchenStatus,
+                    canAccessThirdPartyOrders: field === 'canAccessThirdPartyOrders' ? value : target?.canAccessThirdPartyOrders
+                })
+            })
+
+            if (!response.ok) throw new Error('Failed to update permissions')
+
+            const updated = await response.json()
+            setStaffUsers((prev) => prev.map((user) => (user.id === userId ? updated : user)))
+        } catch {
+            // leave the UI as-is if the update fails
+        } finally {
+            setSavingUserId('')
+        }
+    }
+
+    const filteredHistory = history
+        .filter((day) => !selectedDate || day.dateKey === selectedDate)
+        .sort((a, b) => (sortMode === 'newest' ? b.dateKey.localeCompare(a.dateKey) : a.dateKey.localeCompare(b.dateKey)))
 
     return (
         <div>
-            <div className="inline-flex items-center rounded-2xl bg-slate-900 px-6 py-3 mb-10 shadow-lg">
-                <h1 className="text-5xl font-bold text-white">Manager Dashboard</h1>
-            </div>
+            <h1 className="text-5xl font-bold mb-8 text-gray-900 dark:text-white">Manager Dashboard</h1>
+
+            {!isManager && (
+                <div className="mb-8 rounded-2xl border border-amber-300 bg-amber-50 px-6 py-5 text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200">
+                    Only managers can view staff permissions.
+                </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white bg-slate-100 dark:bg-slate-800/80">
                     <p className="text-lg font-semibold text-slate-600 dark:text-slate-300">Total Sales</p>
@@ -150,38 +222,31 @@ const ManagerDashboard = () => {
                 <div className="p-6 border-b border-gray-200 dark:border-slate-700">
                     <h2 className="text-3xl font-bold text-gray-800 dark:text-white">Daily Sales History</h2>
                     <p className="text-gray-500 dark:text-slate-300 mt-1">Sales and order count by day</p>
-                    <div className="mt-4 flex flex-wrap gap-3">
+                    <div className="mt-4 flex flex-wrap gap-3 items-center">
                         <select
-                            value={selectedMonth}
-                            onChange={(e) => {
-                                setSelectedMonth(e.target.value)
-                                setSelectedDay('all')
-                            }}
+                            value={sortMode}
+                            onChange={(e) => setSortMode(e.target.value as 'newest' | 'oldest')}
                             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-white"
                         >
-                            <option value="all">All Months</option>
-                            {availableMonths.map((monthKey) => (
-                                <option key={monthKey} value={monthKey}>
-                                    {new Date(`${monthKey}-01T00:00:00`).toLocaleDateString(undefined, {
-                                        year: 'numeric',
-                                        month: 'long'
-                                    })}
-                                </option>
-                            ))}
+                            <option value="newest">Newest first</option>
+                            <option value="oldest">Oldest first</option>
                         </select>
 
-                        <select
-                            value={selectedDay}
-                            onChange={(e) => setSelectedDay(e.target.value)}
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
                             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-white"
-                        >
-                            <option value="all">All Days</option>
-                            {availableDays.map((dateKey) => (
-                                <option key={dateKey} value={dateKey}>
-                                    {new Date(`${dateKey}T00:00:00`).toLocaleDateString()}
-                                </option>
-                            ))}
-                        </select>
+                        />
+
+                        {selectedDate && (
+                            <button
+                                onClick={() => setSelectedDate('')}
+                                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-white"
+                            >
+                                Clear Date
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -212,6 +277,55 @@ const ManagerDashboard = () => {
                     </div>
                 )}
             </div>
+
+            {isManager && (
+                <div className="mt-10 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden">
+                    <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+                        <h2 className="text-3xl font-bold text-gray-800 dark:text-white">Staff Permissions</h2>
+                        <p className="text-gray-500 dark:text-slate-300 mt-1">
+                            Grant or revoke access for POS, KDS, online orders, discounts, menu management, inventory, kitchen status, and third-party orders.
+                        </p>
+                    </div>
+
+                    <div className="p-6 space-y-4">
+                        {staffUsers.length === 0 ? (
+                            <p className="text-gray-600 dark:text-slate-300">No staff accounts found.</p>
+                        ) : (
+                            staffUsers.map((user) => (
+                                <div key={user.id} className="rounded-2xl border border-gray-200 dark:border-slate-700 p-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{user.username}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-slate-300">{user.email} • {user.role}</p>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                        {[
+                                            ['canAccessPos', 'POS'],
+                                            ['canAccessKds', 'KDS'],
+                                            ['canAccessOnlineOrder', 'Online'],
+                                            ['canManageDiscounts', 'Discounts'],
+                                            ['canManageMenu', 'Menu'],
+                                            ['canManageInventory', 'Inventory'],
+                                            ['canAccessKitchenStatus', 'Kitchen Status'],
+                                            ['canAccessThirdPartyOrders', 'Third Party']
+                                        ].map(([field, label]) => (
+                                            <label key={field} className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-slate-600 px-3 py-2 text-gray-700 dark:text-gray-200">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={Boolean(user[field as keyof StaffUser])}
+                                                    disabled={savingUserId === user.id}
+                                                    onChange={(e) => updatePermission(user.id, field as keyof StaffUser, e.target.checked)}
+                                                />
+                                                {label}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

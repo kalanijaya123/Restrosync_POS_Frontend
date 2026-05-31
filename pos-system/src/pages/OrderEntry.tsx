@@ -20,6 +20,7 @@ interface MenuItem {
     recipe?: RecipeItem[]
     extras?: ExtraItem[]
     mealPeriods?: string[]
+    available?: boolean
 }
 interface SelectedExtra { extraId: string; name: string; price: number; qty: number }
 interface InventoryItem {
@@ -129,7 +130,8 @@ const OrderEntry = () => {
                 sizes: Array.isArray(item.sizes) ? item.sizes : [],
                 recipe: Array.isArray(item.recipe) ? item.recipe : [],
                 extras: Array.isArray(item.extras) ? item.extras : [],
-                mealPeriods: Array.isArray(item.mealPeriods) ? item.mealPeriods : []
+                mealPeriods: Array.isArray(item.mealPeriods) ? item.mealPeriods : [],
+                available: item.available !== false
             })) : []
             setMenu(safeData)
         } catch (err) {
@@ -162,6 +164,10 @@ const OrderEntry = () => {
         .filter(item => item.name?.toLowerCase().includes(searchQuery.toLowerCase()))
 
     const openExtras = (item: MenuItem, size: Size) => {
+        if (item.available === false) {
+            toast.error(`${item.name} is not available`)
+            return
+        }
         setCurrentItemForExtras({ item, size })
         setSelectedExtras([])
         setShowExtrasModal(true)
@@ -200,6 +206,11 @@ const OrderEntry = () => {
     }
 
     const addToCartDirect = (item: MenuItem, size: Size) => {
+        if (item.available === false) {
+            toast.error(`${item.name} is not available`)
+            return
+        }
+
         const newItem: CartItem = {
             menuItemId: item.id,
             name: item.name,
@@ -520,14 +531,21 @@ const OrderEntry = () => {
 
                         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                             {filteredMenu.map(item => (
-                                <div key={item.id} className="bg-white/10 rounded-2xl overflow-hidden border border-purple-600 hover:border-cyan-500 hover:scale-105 transition shadow-md">
+                                <div key={item.id} className={`bg-white/10 rounded-2xl overflow-hidden border hover:border-cyan-500 hover:scale-105 transition shadow-md ${item.available === false ? 'border-red-500/60 opacity-70' : 'border-purple-600'}`}>
                                     {item.mediaUrl ? <img src={item.mediaUrl} alt={item.name} className="w-full h-48 object-cover" /> :
                                         <div className="h-48 bg-brand-opaque flex items-center justify-center">
                                             <Package className="w-20 h-20 text-white/30" />
                                         </div>
                                     }
                                     <div className="p-4">
-                                        <h3 className="text-xl font-semibold text-blue-300 text-center mb-4">{item.name}</h3>
+                                        <div className="flex items-center justify-center gap-2 mb-4">
+                                            <h3 className="text-xl font-semibold text-blue-300 text-center">{item.name}</h3>
+                                            {item.available === false && (
+                                                <span className="rounded-full border border-red-400/50 bg-red-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-200">
+                                                    Not Available
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="flex flex-wrap justify-center gap-2 mb-3">
                                             <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-cyan-300">{normalizeMealPeriods(item.mealPeriods).length === SERVICE_PERIODS.length ? 'All Day' : normalizeMealPeriods(item.mealPeriods).join(', ')}</span>
                                             <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-purple-300">{item.category}</span>
@@ -536,7 +554,8 @@ const OrderEntry = () => {
                                             {(item.sizes || []).map(size => (
                                                 <button key={size.name}
                                                     onClick={() => (item.extras && item.extras.length > 0) ? openExtras(item, size) : addToCartDirect(item, size)}
-                                                    className="w-full py-2 bg-brand rounded-lg font-semibold text-lg flex justify-between px-4 shadow-sm">
+                                                    disabled={item.available === false}
+                                                    className={`w-full py-2 rounded-lg font-semibold text-lg flex justify-between px-4 shadow-sm ${item.available === false ? 'bg-slate-600 text-slate-300 cursor-not-allowed' : 'bg-brand text-white'}`}>
                                                     <span>{size.name}</span>
                                                     <span>Rs {size.price}</span>
                                                 </button>

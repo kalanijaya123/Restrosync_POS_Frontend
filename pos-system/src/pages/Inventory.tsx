@@ -84,7 +84,7 @@ const InventoryDashboard = () => {
 
     const formatStock = (stock: number, unit: string) => {
         if (unit === 'piece' || unit === 'packet') {
-            return Number.isInteger(stock) ? `${stock}` : `${stock}`
+            return `${Math.round(Number(stock))}`
         }
 
         return Number(stock).toFixed(2)

@@ -20,6 +20,7 @@ interface OrderItem {
     basePrice: number
     qty: number
     extras: any[]
+    checked?: boolean
 }
 
 interface Order {
@@ -208,6 +209,26 @@ const ManageOrderItems = () => {
 
     const total = cart.reduce((sum, item) => sum + item.totalPrice * item.qty, 0)
 
+    const markItemReady = async (itemIndex: number) => {
+        if (!selectedOrder) return
+
+        try {
+            const res = await fetch(`http://localhost:8080/api/orders/${selectedOrder.id}/items/${itemIndex}/checked`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ checked: true })
+            })
+
+            if (!res.ok) throw new Error(await res.text())
+
+            const updated = await res.json()
+            setSelectedOrder(updated)
+            toast.success('Item marked ready')
+        } catch (err: any) {
+            toast.error(err?.message || 'Failed to update item')
+        }
+    }
+
     const submitAddItems = async () => {
         if (!selectedOrder || cart.length === 0) {
             toast.error('Select items to add')
@@ -369,15 +390,26 @@ const ManageOrderItems = () => {
                             <div className="mb-10 bg-white dark:bg-slate-800 p-6 rounded-2xl border-2 border-gray-200 dark:border-slate-700">
                                 <h2 className="text-3xl font-bold mb-6 text-brand">Current Order Items</h2>
                                 <div className="space-y-4">
-                                    {selectedOrder.items.map((item, idx) => (
-                                        <div key={idx} className="flex justify-between items-center bg-gray-50 dark:bg-slate-700 p-4 rounded-xl">
-                                            <div>
-                                                <p className="text-2xl font-bold">{item.name}</p>
-                                                <p className="text-gray-600 dark:text-gray-400">{item.sizeName} × {item.qty}</p>
+                                    {selectedOrder.items.filter(item => !item.checked).map((item, idx) => {
+                                        const originalIndex = selectedOrder.items.findIndex(current => current === item)
+                                        return (
+                                            <div key={idx} className="flex justify-between items-center bg-gray-50 dark:bg-slate-700 p-4 rounded-xl">
+                                                <div>
+                                                    <p className="text-2xl font-bold">{item.name}</p>
+                                                    <p className="text-gray-600 dark:text-gray-400">{item.sizeName} × {item.qty}</p>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <p className="text-2xl font-bold text-green-600">Rs {item.basePrice * item.qty}</p>
+                                                    <button
+                                                        onClick={() => markItemReady(originalIndex)}
+                                                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-sm"
+                                                    >
+                                                        Ready
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <p className="text-2xl font-bold text-green-600">Rs {item.basePrice * item.qty}</p>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                             </div>
 

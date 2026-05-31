@@ -77,6 +77,7 @@ const MenuManager = () => {
     const [editingId, setEditingId] = useState<string | null>(null)
     const [name, setName] = useState('')
     const [category, setCategory] = useState('')
+    const [available, setAvailable] = useState(true)
     const [newCategory, setNewCategory] = useState('')
     const [sizes, setSizes] = useState<Size[]>([
         { name: 'Small', price: 0 },
@@ -194,7 +195,7 @@ const MenuManager = () => {
             recipe: recipe || [],
             extras: extras || [],
             mediaUrl: imageUrl || previewUrl || null,
-            available: true
+            available
         }
 
         console.log('📤 Sending payload to backend:', payload)
@@ -234,6 +235,7 @@ const MenuManager = () => {
         setEditingId(item.id)
         setName(item.name)
         setCategory(item.category)
+        setAvailable(item.available !== false)
         setMealPeriods(normalizeMealPeriods(item.mealPeriods))
         setSizes(item.sizes.length > 0 ? item.sizes : [{ name: 'Small', price: 0 }, { name: 'Regular', price: 0 }, { name: 'Large', price: 0 }])
         setRecipe(item.recipe || [])
@@ -305,6 +307,7 @@ const MenuManager = () => {
         setEditingId(null)
         setName('')
         setCategory('')
+        setAvailable(true)
         setMealPeriods([...MEAL_PERIODS])
         setSizes([{ name: 'Small', price: 0 }, { name: 'Regular', price: 0 }, { name: 'Large', price: 0 }])
         setRecipe([])
@@ -393,6 +396,16 @@ const MenuManager = () => {
                                     Add
                                 </button>
                             </div>
+
+                            <label className="flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-lg font-semibold text-white">
+                                <input
+                                    type="checkbox"
+                                    checked={available}
+                                    onChange={e => setAvailable(e.target.checked)}
+                                    className="h-5 w-5 rounded border-white/30"
+                                />
+                                Available for POS and Online Order
+                            </label>
 
                             <div className="bg-white/10 rounded-xl p-4 space-y-3">
                                 <div>
@@ -616,6 +629,17 @@ const MenuManager = () => {
                                 layout
                                 className="bg-white/10 backdrop-blur-xl rounded-3xl overflow-hidden border border-purple-500/50"
                             >
+                                <div className="flex items-center justify-between gap-3 px-5 pt-5">
+                                    <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${item.available === false ? 'bg-red-500/20 text-red-200 border border-red-400/40' : 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/40'}`}>
+                                        {item.available === false ? 'Not Available' : 'Available'}
+                                    </span>
+                                    <button
+                                        onClick={() => handleEdit(item)}
+                                        className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white hover:bg-white/20"
+                                    >
+                                        Edit
+                                    </button>
+                                </div>
                                 {item.mediaUrl ? (
                                     <img src={item.mediaUrl} alt={item.name} className="w-full h-64 object-cover" />
                                 ) : (
