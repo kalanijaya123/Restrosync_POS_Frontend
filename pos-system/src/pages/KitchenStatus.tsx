@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ChefHat, Clock, AlertCircle, Package, AlertOctagon } from 'lucide-react'
+import { Clock, AlertCircle, Package, AlertOctagon, Plus } from 'lucide-react'
 
 interface Order {
     id: string
@@ -9,9 +10,10 @@ interface Order {
     items: {
         menuItemName?: string
         name?: string
-        item?: { name: string }
+        item?: { name: string; mediaUrl?: string }
         qty?: number
         quantity?: number
+        mediaUrl?: string
     }[]
     status: 'pending' | 'preparing' | 'ready'
     createdAt: string | number[]
@@ -23,10 +25,12 @@ interface Order {
 }
 
 const KitchenStatus = () => {
+    const navigate = useNavigate()
     const [orders, setOrders] = useState<Order[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [currentTime, setCurrentTime] = useState(new Date())
+    const [menuItems, setMenuItems] = useState<any[]>([])
 
     const pendingRef = useRef<HTMLDivElement | null>(null)
     const preparingRef = useRef<HTMLDivElement | null>(null)
@@ -37,6 +41,22 @@ const KitchenStatus = () => {
             setCurrentTime(new Date())
         }, 1000)
         return () => clearInterval(timer)
+    }, [])
+
+    // Fetch menu items for images
+    useEffect(() => {
+        const fetchMenu = async () => {
+            try {
+                const res = await fetch('http://localhost:8080/api/menu')
+                if (res.ok) {
+                    const data = await res.json()
+                    setMenuItems(Array.isArray(data) ? data : [])
+                }
+            } catch (err) {
+                console.error('Failed to load menu:', err)
+            }
+        }
+        fetchMenu()
     }, [])
 
     useEffect(() => {
@@ -84,6 +104,11 @@ const KitchenStatus = () => {
         return 'Takeaway'
     }
 
+    const getMenuItemImage = (itemName: string) => {
+        const menuItem = menuItems.find(m => m.name?.toLowerCase() === itemName?.toLowerCase())
+        return menuItem?.mediaUrl || null
+    }
+
     const getElapsedTime = (createdAt: string | number[]) => {
         const created = new Date(Array.isArray(createdAt)
             ? new Date(createdAt[0], createdAt[1] - 1, createdAt[2], createdAt[3] || 0, createdAt[4] || 0, createdAt[5] || 0)
@@ -119,11 +144,9 @@ const KitchenStatus = () => {
             {/* HEADER */}
             <header className="text-center py-8 border-b border-gray-800">
                 <div className="flex items-center justify-center gap-4 mb-3">
-                    <ChefHat className="w-10 h-10 text-yellow-400" />
                     <h1 className="text-5xl font-bold text-white">
                         Kitchen Display System
                     </h1>
-                    <ChefHat className="w-10 h-10 text-yellow-400" />
                 </div>
                 <p className="text-lg text-gray-400">
                     {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} • {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -149,8 +172,8 @@ const KitchenStatus = () => {
                 <div className="max-w-screen-2xl mx-auto px-12 py-8 pb-24">
                     <div className="grid grid-cols-3 gap-14 items-start">
                         {/* PENDING COLUMN */}
-                        <div className="bg-linear-to-b from-red-900/80 to-red-950/90 rounded-2xl p-6 shadow-lg border border-red-800/40">
-                            <h2 className="text-2xl font-bold text-red-300 text-center mb-6 flex items-center justify-center gap-2">
+                        <div className="bg-linear-to-b from-red-200 to-red-100 dark:from-red-200/30 dark:to-red-100/20 rounded-2xl p-6 shadow-lg border-2 border-red-300">
+                            <h2 className="text-2xl font-bold text-red-700 dark:text-red-300 text-center mb-6 flex items-center justify-center gap-2">
                                 <AlertCircle className="w-6 h-6" />
                                 PENDING ({pending.length})
                             </h2>
@@ -163,34 +186,55 @@ const KitchenStatus = () => {
                                             key={order.id}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="bg-red-800/40 rounded-xl p-5 border border-red-700/50"
+                                            className="bg-white/60 dark:bg-red-900/30 rounded-xl p-5 border-2 border-red-400 shadow-lg"
                                         >
                                             <div className="flex justify-between items-start mb-3">
                                                 <div>
-                                                    <p className="text-2xl font-bold">{order.kotToken || `Order #${order.orderNo || order.orderNumber || order.id.slice(-6).toUpperCase()}`}</p>
-                                                    <p className="text-sm text-gray-300 mt-1">{formatTable(order)}</p>
+                                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{order.kotToken || `Order #${order.orderNo || order.orderNumber || order.id.slice(-6).toUpperCase()}`}</p>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{formatTable(order)}</p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <Clock className="w-5 h-5 inline-block mb-1" />
-                                                    <p className="text-lg font-bold">{getElapsedTime(order.createdAt)}</p>
+                                                    <Clock className="w-5 h-5 inline-block mb-1 text-red-600 dark:text-red-400" />
+                                                    <p className="text-lg font-bold text-gray-900 dark:text-white">{getElapsedTime(order.createdAt)}</p>
                                                 </div>
                                             </div>
                                             {order.customerName && (
-                                                <div className="bg-black/20 rounded-lg px-3 py-2 mb-3">
-                                                    <p className="text-xs text-gray-400">Customer</p>
-                                                    <p className="text-sm font-semibold">{order.customerName}</p>
-                                                    {order.customerPhone && <p className="text-xs text-gray-300">{order.customerPhone}</p>}
+                                                <div className="bg-red-100 dark:bg-black/20 rounded-lg px-3 py-2 mb-3">
+                                                    <p className="text-xs text-gray-600 dark:text-gray-400">Customer</p>
+                                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{order.customerName}</p>
+                                                    {order.customerPhone && <p className="text-xs text-gray-700 dark:text-gray-300">{order.customerPhone}</p>}
                                                 </div>
                                             )}
                                             <div className="space-y-2">
-                                                <p className="text-xs text-gray-300 font-semibold mb-2 uppercase">Items:</p>
-                                                {order.items.map((item, idx) => (
-                                                    <div key={idx} className="bg-black/30 rounded-lg px-4 py-3 flex justify-between items-center">
-                                                        <span className="font-bold text-lg">{item.menuItemName || item.name || item.item?.name || `Item ${idx + 1}`}</span>
-                                                        <span className="bg-white/20 px-3 py-1 rounded font-bold text-sm">×{item.qty || item.quantity || 1}</span>
-                                                    </div>
-                                                ))}
+                                                <p className="text-xs text-gray-600 dark:text-gray-300 font-semibold mb-2 uppercase">Items:</p>
+                                                {order.items.map((item, idx) => {
+                                                    const itemName = item.menuItemName || item.name || item.item?.name || ''
+                                                    const imageUrl = item.mediaUrl || item.item?.mediaUrl || getMenuItemImage(itemName)
+                                                    return (
+                                                        <div key={idx} className="bg-red-50 dark:bg-black/30 rounded-lg px-4 py-3 flex gap-3 items-center">
+                                                            <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                                                {imageUrl ? (
+                                                                    <img src={imageUrl} alt={itemName} className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <Package className="w-8 h-8 text-gray-400" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <span className="font-bold text-lg text-gray-900 dark:text-white">{itemName || `Item ${idx + 1}`}</span>
+                                                            </div>
+                                                            <span className="bg-red-300 dark:bg-white/20 px-3 py-1 rounded font-bold text-sm text-gray-900 dark:text-white">×{item.qty || item.quantity || 1}</span>
+                                                        </div>
+                                                    )
+                                                })
+                                                }
                                             </div>
+                                            <button
+                                                onClick={() => navigate('/manage-items')}
+                                                className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                                            >
+                                                <Plus className="w-5 h-5" />
+                                                Add Items to Order
+                                            </button>
                                         </motion.div>
                                     ))
                                 )}
@@ -198,8 +242,8 @@ const KitchenStatus = () => {
                         </div>
 
                         {/* PREPARING COLUMN */}
-                        <div className="bg-linear-to-b from-amber-900/80 to-amber-950/90 rounded-2xl p-6 shadow-lg border border-amber-800/40">
-                            <h2 className="text-2xl font-bold text-amber-300 text-center mb-6 flex items-center justify-center gap-2">
+                        <div className="bg-linear-to-b from-orange-200 to-orange-100 dark:from-orange-200/30 dark:to-orange-100/20 rounded-2xl p-6 shadow-lg border-2 border-orange-300">
+                            <h2 className="text-2xl font-bold text-orange-700 dark:text-orange-300 text-center mb-6 flex items-center justify-center gap-2">
                                 <Clock className="w-6 h-6" />
                                 PREPARING ({preparing.length})
                             </h2>
@@ -212,34 +256,55 @@ const KitchenStatus = () => {
                                             key={order.id}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="bg-amber-800/40 rounded-xl p-5 border border-amber-700/50"
+                                            className="bg-white/60 dark:bg-orange-900/30 rounded-xl p-5 border-2 border-orange-400 shadow-lg"
                                         >
                                             <div className="flex justify-between items-start mb-3">
                                                 <div>
-                                                    <p className="text-2xl font-bold">{order.kotToken || `Order #${order.orderNo || order.orderNumber || order.id.slice(-6).toUpperCase()}`}</p>
-                                                    <p className="text-sm text-gray-300 mt-1">{formatTable(order)}</p>
+                                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{order.kotToken || `Order #${order.orderNo || order.orderNumber || order.id.slice(-6).toUpperCase()}`}</p>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{formatTable(order)}</p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <Clock className="w-5 h-5 inline-block mb-1" />
-                                                    <p className="text-lg font-bold">{getElapsedTime(order.createdAt)}</p>
+                                                    <Clock className="w-5 h-5 inline-block mb-1 text-orange-600 dark:text-orange-400" />
+                                                    <p className="text-lg font-bold text-gray-900 dark:text-white">{getElapsedTime(order.createdAt)}</p>
                                                 </div>
                                             </div>
                                             {order.customerName && (
-                                                <div className="bg-black/20 rounded-lg px-3 py-2 mb-3">
-                                                    <p className="text-xs text-gray-400">Customer</p>
-                                                    <p className="text-sm font-semibold">{order.customerName}</p>
-                                                    {order.customerPhone && <p className="text-xs text-gray-300">{order.customerPhone}</p>}
+                                                <div className="bg-orange-100 dark:bg-black/20 rounded-lg px-3 py-2 mb-3">
+                                                    <p className="text-xs text-gray-600 dark:text-gray-400">Customer</p>
+                                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{order.customerName}</p>
+                                                    {order.customerPhone && <p className="text-xs text-gray-700 dark:text-gray-300">{order.customerPhone}</p>}
                                                 </div>
                                             )}
                                             <div className="space-y-2">
-                                                <p className="text-xs text-gray-300 font-semibold mb-2 uppercase">Items:</p>
-                                                {order.items.map((item, idx) => (
-                                                    <div key={idx} className="bg-black/30 rounded-lg px-4 py-3 flex justify-between items-center">
-                                                        <span className="font-bold text-lg">{item.menuItemName || item.name || item.item?.name || `Item ${idx + 1}`}</span>
-                                                        <span className="bg-white/20 px-3 py-1 rounded font-bold text-sm">×{item.qty || item.quantity || 1}</span>
-                                                    </div>
-                                                ))}
+                                                <p className="text-xs text-gray-600 dark:text-gray-300 font-semibold mb-2 uppercase">Items:</p>
+                                                {order.items.map((item, idx) => {
+                                                    const itemName = item.menuItemName || item.name || item.item?.name || ''
+                                                    const imageUrl = item.mediaUrl || item.item?.mediaUrl || getMenuItemImage(itemName)
+                                                    return (
+                                                        <div key={idx} className="bg-orange-50 dark:bg-black/30 rounded-lg px-4 py-3 flex gap-3 items-center">
+                                                            <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                                                {imageUrl ? (
+                                                                    <img src={imageUrl} alt={itemName} className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <Package className="w-8 h-8 text-gray-400" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <span className="font-bold text-lg text-gray-900 dark:text-white">{itemName || `Item ${idx + 1}`}</span>
+                                                            </div>
+                                                            <span className="bg-orange-300 dark:bg-white/20 px-3 py-1 rounded font-bold text-sm text-gray-900 dark:text-white">×{item.qty || item.quantity || 1}</span>
+                                                        </div>
+                                                    )
+                                                })
+                                                }
                                             </div>
+                                            <button
+                                                onClick={() => navigate('/manage-items')}
+                                                className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                                            >
+                                                <Plus className="w-5 h-5" />
+                                                Add Items to Order
+                                            </button>
                                         </motion.div>
                                     ))
                                 )}
@@ -247,8 +312,8 @@ const KitchenStatus = () => {
                         </div>
 
                         {/* READY COLUMN */}
-                        <div className="bg-linear-to-b from-emerald-900/80 to-emerald-950/90 rounded-2xl p-6 shadow-lg border border-emerald-800/40">
-                            <h2 className="text-2xl font-bold text-emerald-300 text-center mb-6 flex items-center justify-center gap-2">
+                        <div className="bg-linear-to-b from-green-200 to-green-100 dark:from-green-200/30 dark:to-green-100/20 rounded-2xl p-6 shadow-lg border-2 border-green-300">
+                            <h2 className="text-2xl font-bold text-green-700 dark:text-green-300 text-center mb-6 flex items-center justify-center gap-2">
                                 <Package className="w-6 h-6" />
                                 READY ({ready.length})
                             </h2>
@@ -261,34 +326,55 @@ const KitchenStatus = () => {
                                             key={order.id}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="bg-emerald-800/40 rounded-xl p-5 border border-emerald-700/50"
+                                            className="bg-white/60 dark:bg-green-900/30 rounded-xl p-5 border-2 border-green-400 shadow-lg"
                                         >
                                             <div className="flex justify-between items-start mb-3">
                                                 <div>
-                                                    <p className="text-2xl font-bold">{order.kotToken || `Order #${order.orderNo || order.orderNumber || order.id.slice(-6).toUpperCase()}`}</p>
-                                                    <p className="text-sm text-gray-300 mt-1">{formatTable(order)}</p>
+                                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{order.kotToken || `Order #${order.orderNo || order.orderNumber || order.id.slice(-6).toUpperCase()}`}</p>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{formatTable(order)}</p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <Clock className="w-5 h-5 inline-block mb-1" />
-                                                    <p className="text-lg font-bold">{getElapsedTime(order.createdAt)}</p>
+                                                    <Clock className="w-5 h-5 inline-block mb-1 text-green-600 dark:text-green-400" />
+                                                    <p className="text-lg font-bold text-gray-900 dark:text-white">{getElapsedTime(order.createdAt)}</p>
                                                 </div>
                                             </div>
                                             {order.customerName && (
-                                                <div className="bg-black/20 rounded-lg px-3 py-2 mb-3">
-                                                    <p className="text-xs text-gray-400">Customer</p>
-                                                    <p className="text-sm font-semibold">{order.customerName}</p>
-                                                    {order.customerPhone && <p className="text-xs text-gray-300">{order.customerPhone}</p>}
+                                                <div className="bg-green-100 dark:bg-black/20 rounded-lg px-3 py-2 mb-3">
+                                                    <p className="text-xs text-gray-600 dark:text-gray-400">Customer</p>
+                                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{order.customerName}</p>
+                                                    {order.customerPhone && <p className="text-xs text-gray-700 dark:text-gray-300">{order.customerPhone}</p>}
                                                 </div>
                                             )}
                                             <div className="space-y-2">
-                                                <p className="text-xs text-gray-300 font-semibold mb-2 uppercase">Items:</p>
-                                                {order.items.map((item, idx) => (
-                                                    <div key={idx} className="bg-black/30 rounded-lg px-4 py-3 flex justify-between items-center">
-                                                        <span className="font-bold text-lg">{item.menuItemName || item.name || item.item?.name || `Item ${idx + 1}`}</span>
-                                                        <span className="bg-white/20 px-3 py-1 rounded font-bold text-sm">×{item.qty || item.quantity || 1}</span>
-                                                    </div>
-                                                ))}
+                                                <p className="text-xs text-gray-600 dark:text-gray-300 font-semibold mb-2 uppercase">Items:</p>
+                                                {order.items.map((item, idx) => {
+                                                    const itemName = item.menuItemName || item.name || item.item?.name || ''
+                                                    const imageUrl = item.mediaUrl || item.item?.mediaUrl || getMenuItemImage(itemName)
+                                                    return (
+                                                        <div key={idx} className="bg-green-50 dark:bg-black/30 rounded-lg px-4 py-3 flex gap-3 items-center">
+                                                            <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                                                {imageUrl ? (
+                                                                    <img src={imageUrl} alt={itemName} className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <Package className="w-8 h-8 text-gray-400" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <span className="font-bold text-lg text-gray-900 dark:text-white">{itemName || `Item ${idx + 1}`}</span>
+                                                            </div>
+                                                            <span className="bg-green-300 dark:bg-white/20 px-3 py-1 rounded font-bold text-sm text-gray-900 dark:text-white">×{item.qty || item.quantity || 1}</span>
+                                                        </div>
+                                                    )
+                                                })
+                                                }
                                             </div>
+                                            <button
+                                                onClick={() => navigate('/manage-items')}
+                                                className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                                            >
+                                                <Plus className="w-5 h-5" />
+                                                Add Items to Order
+                                            </button>
                                         </motion.div>
                                     ))
                                 )}

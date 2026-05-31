@@ -3,25 +3,39 @@ import { NavLink } from 'react-router-dom'
 import {
     Table, ShoppingCart, Receipt,
     CreditCard, Users, Package, ChefHat,
-    Globe, Utensils, Settings
+    Globe, Utensils, Settings, Plus
 } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 
 const Sidebar = () => {
     const { theme } = useTheme()
     const [currentTime, setCurrentTime] = useState(new Date())
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
+    const isManager = currentUser?.role === 'Manager'
+    const canAccessPos = isManager || Boolean(
+        currentUser?.canAccessPos ||
+        currentUser?.canManageMenu ||
+        currentUser?.canManageInventory ||
+        currentUser?.canAccessKitchenStatus ||
+        currentUser?.canAccessThirdPartyOrders
+    )
+    const canManageMenu = isManager || Boolean(currentUser?.canManageMenu)
+    const canManageInventory = isManager || Boolean(currentUser?.canManageInventory)
+    const canAccessKitchenStatus = isManager || Boolean(currentUser?.canAccessKitchenStatus)
+    const canAccessThirdPartyOrders = isManager || Boolean(currentUser?.canAccessThirdPartyOrders)
 
     const menuItems = [
         { to: '/tables', label: 'Table Layout', icon: Table },
         { to: '/orders', label: 'Order Entry', icon: ShoppingCart },
         { to: '/summary', label: 'Order Summary', icon: Receipt },
         { to: '/payment', label: 'Payment', icon: CreditCard },
-        { to: '/manager', label: 'Manager', icon: Users },
-        { to: '/inventory', label: 'Inventory', icon: Package },
-        { to: '/status', label: 'Kitchen Status', icon: ChefHat },
-        { to: '/third-party', label: 'Third-Party', icon: Globe },
-        { to: '/menu-manager', label: 'Menu Manager', icon: Utensils },
-        { to: '/settings', label: 'Settings', icon: Settings },
+        { to: '/manage-items', label: 'Add Items to Order', icon: Plus },
+        { to: '/manager', label: 'Manager', icon: Users, managerOnly: true },
+        { to: '/inventory', label: 'Inventory', icon: Package, access: canManageInventory },
+        { to: '/status', label: 'Kitchen Status', icon: ChefHat, access: canAccessKitchenStatus },
+        { to: '/third-party', label: 'Third-Party', icon: Globe, access: canAccessThirdPartyOrders },
+        { to: '/menu-manager', label: 'Menu Manager', icon: Utensils, access: canManageMenu },
+        { to: '/settings', label: 'Settings', icon: Settings, managerOnly: true },
     ]
 
     useEffect(() => {
@@ -41,7 +55,7 @@ const Sidebar = () => {
                         <ChefHat className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                        <h1 className={`text-3xl! font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>RestroSync</h1>
+                        <h1 className="text-3xl! font-black tracking-tight text-gray-900">RestroSync</h1>
                         <p className="text-sm text-gray-500">Point of Sale</p>
                     </div>
                 </div>
@@ -62,8 +76,11 @@ const Sidebar = () => {
             {/* Navigation Menu */}
             <nav className="flex-1 p-4 overflow-y-auto">
                 <ul className="space-y-2">
-                    {menuItems.map((item) => {
-                        const Icon = item.icon
+                    {canAccessPos && menuItems.filter((item) => {
+                        if (item.managerOnly) return isManager
+                        if (item.access === false) return false
+                        return true
+                    }).map((item) => {
                         return (
                             <li key={item.to}>
                                 <NavLink to={item.to}>
@@ -71,12 +88,9 @@ const Sidebar = () => {
                                         <div
                                             className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${isActive
                                                 ? 'bg-brand text-white shadow-2xl shadow-brand/50'
-                                                : theme === 'dark'
-                                                    ? 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                                                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                                                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                                                 }`}
                                         >
-                                            <Icon className="w-5 h-5" />
                                             <span>{item.label}</span>
                                             {isActive && (
                                                 <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>

@@ -88,7 +88,7 @@ const Register = () => {
     }
 
     return (
-        <div className={`min-h-screen bg-gradient-to-br ${theme === 'dark' ? 'from-blue-900 to-slate-900' : 'from-blue-500 to-blue-700'} flex items-center justify-center p-6`}>
+        <div className={`min-h-screen bg-gradient-to-br from-blue-200 to-blue-300 dark:from-blue-300/30 dark:to-blue-200/30 flex items-center justify-center p-6`}>
             <div className={`${theme === 'dark' ? 'bg-slate-800 text-white' : 'bg-white text-gray-800'} rounded-2xl shadow-2xl w-full max-w-lg p-10`}>
                 {/* CLEAN TITLE */}
                 <h1 className={`text-4xl font-bold text-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'} mb-1`}>Create Account</h1>

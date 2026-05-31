@@ -5,6 +5,11 @@ import toast, { Toaster } from 'react-hot-toast'
 import { Plus, Minus, ShoppingCart, ArrowLeft, Package, User, X } from 'lucide-react'
 
 interface Size { name: string; price: number }
+interface RecipeItem {
+    ingredientId: string
+    ingredientName: string
+    quantities: Record<string, number>
+}
 interface ExtraItem { id: string; name: string; price: number; quantityPerUnit: number; ingredientId: string }
 interface MenuItem {
     id: string
@@ -12,9 +17,25 @@ interface MenuItem {
     category: string
     sizes: Size[]
     mediaUrl?: string
+    recipe?: RecipeItem[]
     extras?: ExtraItem[]
+    mealPeriods?: string[]
+    available?: boolean
 }
 interface SelectedExtra { extraId: string; name: string; price: number; qty: number }
+interface InventoryItem {
+    id: string
+    name: string
+    unit: string
+    currentStock: number
+}
+interface InventoryWarning {
+    menuItemName: string
+    ingredientName: string
+    required: number
+    available: number
+    unit: string
+}
 interface CartItem {
     menuItemId: string
     name: string
@@ -25,9 +46,33 @@ interface CartItem {
     totalPrice: number
 }
 
+const MEAL_PERIODS = ['All Day', 'Breakfast', 'Lunch', 'Dinner'] as const
+const SERVICE_PERIODS = ['Breakfast', 'Lunch', 'Dinner'] as const
+
+const normalizeMealPeriods = (mealPeriods?: string[] | null) => {
+    const cleaned = Array.from(new Set((mealPeriods || [])
+        .map(period => period.trim())
+        .filter(Boolean)
+        .filter(period => period === 'All Day' || SERVICE_PERIODS.includes(period as any))))
+
+    if (cleaned.length === 0 || cleaned.includes('All Day') || cleaned.length === SERVICE_PERIODS.length) {
+        return [...SERVICE_PERIODS]
+    }
+
+    return SERVICE_PERIODS.filter(period => cleaned.includes(period))
+}
+
+const matchesMealPeriod = (mealPeriods: string[] | undefined, selectedPeriod: typeof MEAL_PERIODS[number]) => {
+    if (selectedPeriod === 'All Day') return true
+    const normalized = normalizeMealPeriods(mealPeriods)
+    return normalized.includes(selectedPeriod)
+}
+
 const OrderEntry = () => {
     const [menu, setMenu] = useState<MenuItem[]>([])
+    const [inventory, setInventory] = useState<InventoryItem[]>([])
     const [cart, setCart] = useState<CartItem[]>([])
+    const [selectedMealPeriod, setSelectedMealPeriod] = useState<typeof MEAL_PERIODS[number]>('All Day')
     const [selectedCategory, setSelectedCategory] = useState('All')
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
@@ -37,22 +82,30 @@ const OrderEntry = () => {
     const [showExtrasModal, setShowExtrasModal] = useState(false)
     const [currentItemForExtras, setCurrentItemForExtras] = useState<{ item: MenuItem; size: Size } | null>(null)
     const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([])
+    const [showInventoryWarningModal, setShowInventoryWarningModal] = useState(false)
+    const [inventoryWarnings, setInventoryWarnings] = useState<InventoryWarning[]>([])
 
     const [showCustomerModal, setShowCustomerModal] = useState(false)
     const [title, setTitle] = useState<'Mr' | 'Mrs' | 'Miss' | 'Dr' | ''>('')
     const [customerName, setCustomerName] = useState('')
     const [countryCode, setCountryCode] = useState('+94')
     const [phoneNumber, setPhoneNumber] = useState('')
+    const [orderNote, setOrderNote] = useState('')
 
     const { tableId } = useParams<{ tableId: string }>()
     const navigate = useNavigate()
 
     useEffect(() => {
         fetchMenu()
+        fetchInventory()
         if (tableId) {
             fetchTableDetails()
         }
     }, [])
+
+    useEffect(() => {
+        setSelectedCategory('All')
+    }, [selectedMealPeriod])
 
     const fetchTableDetails = async () => {
         try {
@@ -75,7 +128,10 @@ const OrderEntry = () => {
             const safeData = Array.isArray(data) ? data.map((item: any) => ({
                 ...item,
                 sizes: Array.isArray(item.sizes) ? item.sizes : [],
-                extras: Array.isArray(item.extras) ? item.extras : []
+                recipe: Array.isArray(item.recipe) ? item.recipe : [],
+                extras: Array.isArray(item.extras) ? item.extras : [],
+                mealPeriods: Array.isArray(item.mealPeriods) ? item.mealPeriods : [],
+                available: item.available !== false
             })) : []
             setMenu(safeData)
         } catch (err) {
@@ -86,13 +142,32 @@ const OrderEntry = () => {
         }
     }
 
-    const categories = ['All', ...Array.from(new Set(menu.map(m => m.category || 'Uncategorized')))]
+    const fetchInventory = async () => {
+        try {
+            const res = await fetch('http://localhost:8080/api/inventory')
+            if (!res.ok) throw new Error()
+            const data = await res.json()
+            setInventory(Array.isArray(data) ? data : [])
+        } catch (err) {
+            console.error('Failed to load inventory for order validation')
+            setInventory([])
+        }
+    }
+
+    const categories = ['All', ...Array.from(new Set(menu
+        .filter(item => matchesMealPeriod(item.mealPeriods, selectedMealPeriod))
+        .map(m => m.category || 'Uncategorized')))]
 
     const filteredMenu = menu
+        .filter(item => matchesMealPeriod(item.mealPeriods, selectedMealPeriod))
         .filter(item => selectedCategory === 'All' || item.category === selectedCategory)
         .filter(item => item.name?.toLowerCase().includes(searchQuery.toLowerCase()))
 
     const openExtras = (item: MenuItem, size: Size) => {
+        if (item.available === false) {
+            toast.error(`${item.name} is not available`)
+            return
+        }
         setCurrentItemForExtras({ item, size })
         setSelectedExtras([])
         setShowExtrasModal(true)
@@ -131,6 +206,11 @@ const OrderEntry = () => {
     }
 
     const addToCartDirect = (item: MenuItem, size: Size) => {
+        if (item.available === false) {
+            toast.error(`${item.name} is not available`)
+            return
+        }
+
         const newItem: CartItem = {
             menuItemId: item.id,
             name: item.name,
@@ -161,12 +241,43 @@ const OrderEntry = () => {
 
     const total = cart.reduce((sum, item) => sum + item.totalPrice * item.qty, 0)
 
+    const getInventoryWarnings = () => {
+        const warnings: InventoryWarning[] = []
+
+        cart.forEach(cartItem => {
+            const menuItem = menu.find(item => item.id === cartItem.menuItemId)
+            if (!menuItem?.recipe?.length) return
+
+            menuItem.recipe.forEach(recipeItem => {
+                const inventoryItem = inventory.find(item => item.id === recipeItem.ingredientId)
+                const perUnit = recipeItem.quantities?.[cartItem.sizeName]
+                    ?? recipeItem.quantities?.Regular
+                    ?? Object.values(recipeItem.quantities || {})[0]
+                    ?? 0
+                const required = perUnit * cartItem.qty
+                const available = inventoryItem?.currentStock ?? 0
+
+                if (!inventoryItem || available < required) {
+                    warnings.push({
+                        menuItemName: cartItem.name,
+                        ingredientName: inventoryItem?.name || recipeItem.ingredientName || 'Unknown ingredient',
+                        required,
+                        available,
+                        unit: inventoryItem?.unit || 'unit'
+                    })
+                }
+            })
+        })
+
+        return warnings
+    }
+
     const sendToKitchen = () => {
         if (cart.length === 0) return toast.error('Cart is empty!')
         setShowCustomerModal(true)
     }
 
-    const confirmOrder = async () => {
+    const submitOrder = async () => {
         const fullName = title ? `${title}. ${customerName.trim()}` : (customerName.trim() || 'Guest')
         const fullPhone = phoneNumber ? `${countryCode}${phoneNumber.replace(/\D/g, '')}` : null
 
@@ -191,7 +302,7 @@ const OrderEntry = () => {
             source: source,                     // "dine-in" or "takeaway"
             customerName: fullName,
             customerPhone: fullPhone,
-            notes: "",
+            notes: orderNote.trim() || null,
             waiterName: "Staff"
         }
 
@@ -205,8 +316,9 @@ const OrderEntry = () => {
             if (!res.ok) throw new Error(await res.text())
 
             await res.json()
-            toast.success(`Order created for ${fullName}! Proceeding to payment...`, { duration: 2000 })
+            toast.success(`Order created for ${fullName}! Proceeding to payment and kitchen dispatch...`, { duration: 2000 })
             setCart([])
+            setOrderNote('')
             setShowCustomerModal(false)
 
             // Navigate to payment page
@@ -214,6 +326,22 @@ const OrderEntry = () => {
         } catch (err: any) {
             toast.error('Failed: ' + err.message)
         }
+    }
+
+    const confirmOrder = () => {
+        const warnings = getInventoryWarnings()
+        if (warnings.length > 0) {
+            setInventoryWarnings(warnings)
+            setShowInventoryWarningModal(true)
+            return
+        }
+
+        void submitOrder()
+    }
+
+    const proceedWithWarnings = () => {
+        setShowInventoryWarningModal(false)
+        void submitOrder()
     }
 
     if (loading) return <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center text-6xl text-brand">Loading...</div>
@@ -227,7 +355,7 @@ const OrderEntry = () => {
                 <div className="fixed inset-0 bg-black/70 dark:bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-6">
                     <div className="bg-white dark:bg-slate-800 rounded-3xl p-10 max-w-lg w-full border-2 border-gray-200 dark:border-slate-700 shadow-2xl">
                         <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-4xl font-bold text-cyan-400 flex items-center gap-4">
+                            <h2 className="text-4xl font-bold text-blue-300 flex items-center gap-4">
                                 <User className="w-12 h-12" /> Customer Info
                             </h2>
                             <button onClick={() => setShowCustomerModal(false)}>
@@ -241,7 +369,7 @@ const OrderEntry = () => {
                                 <div className="grid grid-cols-4 gap-4 mt-3">
                                     {(['Mr', 'Mrs', 'Miss', 'Dr'] as const).map(t => (
                                         <button key={t} onClick={() => setTitle(t)}
-                                            className={`py-4 rounded-xl text-xl font-bold ${title === t ? 'bg-cyan-600' : 'bg-white/10 hover:bg-white/20'}`}>
+                                            className={`py-4 rounded-xl text-xl font-bold text-white ${title === t ? 'bg-cyan-600' : 'bg-white/10 hover:bg-white/20'}`}>
                                             {t}.
                                         </button>
                                     ))}
@@ -261,12 +389,63 @@ const OrderEntry = () => {
                                 <input type="tel" placeholder="771234567" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)}
                                     className="flex-1 px-6 py-5 rounded-xl bg-white/10 text-xl border border-white/20 focus:border-cyan-400 outline-none" />
                             </div>
+
+                            <div>
+                                <label className="text-xl text-gray-300">Kitchen note</label>
+                                <textarea
+                                    rows={4}
+                                    placeholder="Example: Extra spicy, no onion, serve sauce separately"
+                                    value={orderNote}
+                                    onChange={e => setOrderNote(e.target.value)}
+                                    className="w-full mt-3 px-6 py-5 rounded-xl bg-white/10 text-xl border border-white/20 focus:border-cyan-400 outline-none resize-none"
+                                />
+                            </div>
                         </div>
 
                         <div className="flex gap-4 mt-10">
-                            <button onClick={() => setShowCustomerModal(false)} className="flex-1 py-5 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-xl font-bold text-xl">Cancel</button>
+                            <button onClick={() => setShowCustomerModal(false)} className="flex-1 py-5 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-bold text-xl">Cancel</button>
                             <button onClick={confirmOrder} className="flex-1 py-5 bg-brand rounded-xl font-bold text-xl shadow-xl">
                                 Confirm & Go to Payment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* INVENTORY WARNING MODAL */}
+            {showInventoryWarningModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-6">
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-10 max-w-2xl w-full border-2 border-amber-400 shadow-2xl">
+                        <h2 className="text-3xl font-bold text-amber-400 mb-4">Inventory shortage detected</h2>
+                        <p className="text-gray-600 dark:text-gray-300 mb-6">
+                            One or more ingredients for this order are missing or below the required amount.
+                            You can still proceed, but the kitchen may not be able to prepare every item fully.
+                        </p>
+
+                        <div className="max-h-80 overflow-y-auto space-y-3 mb-8">
+                            {inventoryWarnings.map((warning, index) => (
+                                <div key={`${warning.menuItemName}-${warning.ingredientName}-${index}`} className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-400/10 p-4">
+                                    <p className="font-bold text-gray-900 dark:text-white">{warning.menuItemName}</p>
+                                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                                        {warning.ingredientName}: needs {warning.required.toFixed(2)} {warning.unit},
+                                        available {warning.available.toFixed(2)} {warning.unit}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setShowInventoryWarningModal(false)}
+                                className="flex-1 py-4 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-bold text-lg"
+                            >
+                                Go Back and Edit
+                            </button>
+                            <button
+                                onClick={proceedWithWarnings}
+                                className="flex-1 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-lg"
+                            >
+                                Proceed Anyway
                             </button>
                         </div>
                     </div>
@@ -277,7 +456,7 @@ const OrderEntry = () => {
             {showExtrasModal && currentItemForExtras && (
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-40 flex items-center justify-center p-6">
                     <div className="bg-brand rounded-3xl p-8 max-w-lg w-full border border-brand shadow-2xl">
-                        <h2 className="text-4xl font-bold text-cyan-400 text-center mb-6">
+                        <h2 className="text-4xl font-bold text-blue-300 text-center mb-6">
                             {currentItemForExtras.item.name} ({currentItemForExtras.size.name})
                         </h2>
 
@@ -293,12 +472,12 @@ const OrderEntry = () => {
                                             const ex = p.find(e => e.extraId === extra.id)
                                             if (ex) return p.map(e => e.extraId === extra.id ? { ...e, qty: e.qty + 1 } : e)
                                             return [...p, { extraId: extra.id, name: extra.name, price: extra.price, qty: 1 }]
-                                        })} className="w-14 h-14 bg-green-600 rounded-full"><Plus /></button>
+                                        })} className="w-14 h-14 bg-green-600 rounded-full"><Plus className="text-white" /></button>
                                         <span className="text-3xl font-bold w-16 text-center">
                                             {selectedExtras.find(e => e.extraId === extra.id)?.qty || 0}
                                         </span>
                                         <button onClick={() => setSelectedExtras(p => p.map(e => e.extraId === extra.id ? { ...e, qty: Math.max(0, e.qty - 1) } : e).filter(e => e.qty > 0))}
-                                            className="w-14 h-14 bg-red-600 rounded-full"><Minus /></button>
+                                            className="w-14 h-14 bg-red-600 rounded-full"><Minus className="text-white" /></button>
                                     </div>
                                 </div>
                             )) : <p className="text-center text-gray-400 text-xl">No extras</p>}
@@ -330,6 +509,17 @@ const OrderEntry = () => {
                         <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                             className="w-full max-w-2xl mx-auto block px-4 py-3 rounded-2xl bg-white/10 text-lg mb-6" />
 
+                        <div className="flex gap-3 flex-wrap justify-center mb-4">
+                            {MEAL_PERIODS.map(period => (
+                                <button
+                                    key={period}
+                                    onClick={() => setSelectedMealPeriod(period)}
+                                    className={`px-4 py-2 rounded-full text-base font-semibold ${selectedMealPeriod === period ? 'bg-cyan-600 text-white' : 'bg-white/10'}`}>
+                                    {period}
+                                </button>
+                            ))}
+                        </div>
+
                         <div className="flex gap-4 flex-wrap justify-center mb-12">
                             {categories.map(cat => (
                                 <button key={cat} onClick={() => setSelectedCategory(cat)}
@@ -341,19 +531,31 @@ const OrderEntry = () => {
 
                         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                             {filteredMenu.map(item => (
-                                <div key={item.id} className="bg-white/10 rounded-2xl overflow-hidden border border-purple-600 hover:border-cyan-500 hover:scale-105 transition shadow-md">
+                                <div key={item.id} className={`bg-white/10 rounded-2xl overflow-hidden border hover:border-cyan-500 hover:scale-105 transition shadow-md ${item.available === false ? 'border-red-500/60 opacity-70' : 'border-purple-600'}`}>
                                     {item.mediaUrl ? <img src={item.mediaUrl} alt={item.name} className="w-full h-48 object-cover" /> :
                                         <div className="h-48 bg-brand-opaque flex items-center justify-center">
                                             <Package className="w-20 h-20 text-white/30" />
                                         </div>
                                     }
                                     <div className="p-4">
-                                        <h3 className="text-xl font-semibold text-cyan-300 text-center mb-4">{item.name}</h3>
+                                        <div className="flex items-center justify-center gap-2 mb-4">
+                                            <h3 className="text-xl font-semibold text-blue-300 text-center">{item.name}</h3>
+                                            {item.available === false && (
+                                                <span className="rounded-full border border-red-400/50 bg-red-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-200">
+                                                    Not Available
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-wrap justify-center gap-2 mb-3">
+                                            <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-cyan-300">{normalizeMealPeriods(item.mealPeriods).length === SERVICE_PERIODS.length ? 'All Day' : normalizeMealPeriods(item.mealPeriods).join(', ')}</span>
+                                            <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-purple-300">{item.category}</span>
+                                        </div>
                                         <div className="space-y-3">
                                             {(item.sizes || []).map(size => (
                                                 <button key={size.name}
                                                     onClick={() => (item.extras && item.extras.length > 0) ? openExtras(item, size) : addToCartDirect(item, size)}
-                                                    className="w-full py-2 bg-brand rounded-lg font-semibold text-lg flex justify-between px-4 shadow-sm">
+                                                    disabled={item.available === false}
+                                                    className={`w-full py-2 rounded-lg font-semibold text-lg flex justify-between px-4 shadow-sm ${item.available === false ? 'bg-slate-600 text-slate-300 cursor-not-allowed' : 'bg-brand text-white'}`}>
                                                     <span>{size.name}</span>
                                                     <span>Rs {size.price}</span>
                                                 </button>
@@ -370,7 +572,7 @@ const OrderEntry = () => {
                 {/* CART */}
                 <div className="w-80 bg-white dark:bg-slate-800 border-l-2 border-gray-200 dark:border-slate-700 p-6 flex flex-col">
                     <div className="flex items-center gap-4 mb-8">
-                        <ShoppingCart className="w-10 h-10 text-cyan-400" />
+                        <ShoppingCart className="w-10 h-10 text-blue-300" />
                         <h2 className="text-2xl font-bold">Cart ({cart.reduce((s, i) => s + i.qty, 0)})</h2>
                     </div>
 
@@ -384,11 +586,11 @@ const OrderEntry = () => {
                                             <p className="text-orange-300 text-sm">{item.sizeName}</p>
                                             {item.extras.map((e, ei) => <p key={ei} className="text-yellow-400 text-sm">• {e.name} ×{e.qty}</p>)}
                                         </div>
-                                        <p className="text-xl font-bold text-green-400">Rs {item.totalPrice * item.qty}</p>
+                                        <p className="text-xl font-bold text-green-300">Rs {item.totalPrice * item.qty}</p>
                                     </div>
                                     <div className="flex justify-center items-center gap-6 mt-6">
                                         <button onClick={() => updateQty(i, -1)} className="w-12 h-12 bg-red-600 rounded-full"><Minus className="w-6 h-6" /></button>
-                                        <span className="text-2xl font-extrabold text-cyan-300">{item.qty}</span>
+                                        <span className="text-2xl font-extrabold text-blue-300">{item.qty}</span>
                                         <button onClick={() => updateQty(i, 1)} className="w-12 h-12 bg-green-600 rounded-full"><Plus className="w-6 h-6" /></button>
                                     </div>
                                 </div>
@@ -398,11 +600,11 @@ const OrderEntry = () => {
                     <div className="border-t border-brand pt-4 mt-4">
                         <div className="flex justify-between mb-4">
                             <span className="text-lg font-bold">Total</span>
-                            <span className="text-2xl font-extrabold text-green-400">Rs {total}</span>
+                            <span className="text-2xl font-extrabold text-green-300">Rs {total}</span>
                         </div>
                         <button onClick={sendToKitchen} disabled={cart.length === 0}
                             className="w-full py-3 bg-brand rounded-xl font-semibold text-base shadow-md disabled:opacity-50">
-                            SEND TO KITCHEN
+                            REVIEW & PAY
                         </button>
                     </div>
                 </div>

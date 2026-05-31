@@ -39,6 +39,27 @@ interface MenuItem {
     mediaUrl?: string
     recipe: RecipeItem[]
     extras: ExtraItem[]
+    mealPeriods?: string[]
+}
+
+const MEAL_PERIODS = ['Breakfast', 'Lunch', 'Dinner'] as const
+
+const normalizeMealPeriods = (mealPeriods?: string[] | null) => {
+    const cleaned = Array.from(new Set((mealPeriods || [])
+        .map(period => period.trim())
+        .filter(Boolean)
+        .filter(period => period === 'All Day' || MEAL_PERIODS.includes(period as any))))
+
+    if (cleaned.length === 0 || cleaned.includes('All Day') || cleaned.length === MEAL_PERIODS.length) {
+        return [...MEAL_PERIODS]
+    }
+
+    return MEAL_PERIODS.filter(period => cleaned.includes(period))
+}
+
+const mealPeriodLabel = (mealPeriods?: string[] | null) => {
+    const normalized = normalizeMealPeriods(mealPeriods)
+    return normalized.length === MEAL_PERIODS.length ? 'All Day' : normalized.join(', ')
 }
 
 // CHANGE THESE TO YOUR CLOUDINARY ACCOUNT
@@ -50,11 +71,13 @@ const MenuManager = () => {
     const [inventory, setInventory] = useState<InventoryItem[]>([])
     const [categories, setCategories] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
+    const [mealPeriods, setMealPeriods] = useState<string[]>([...MEAL_PERIODS])
 
     // Form state
     const [editingId, setEditingId] = useState<string | null>(null)
     const [name, setName] = useState('')
     const [category, setCategory] = useState('')
+    const [available, setAvailable] = useState(true)
     const [newCategory, setNewCategory] = useState('')
     const [sizes, setSizes] = useState<Size[]>([
         { name: 'Small', price: 0 },
@@ -95,17 +118,27 @@ const MenuManager = () => {
                 fetch(getApiUrl('/inventory'))
             ])
 
-            const menuData: MenuItem[] = await menuRes.json()
-            const invData: InventoryItem[] = await invRes.json()
+            if (!menuRes.ok || !invRes.ok) {
+                throw new Error(`Server error: ${menuRes.status} / ${invRes.status}`)
+            }
 
-            setMenu(menuData || [])
-            setInventory(invData || [])
+            const menuData = await menuRes.json()
+            const invData = await invRes.json()
 
-            const cats = [...new Set(menuData.map((m: MenuItem) => m.category))].sort()
-            setCategories(cats.length > 0 ? cats : ['Starters', 'Mains', 'Kottu', 'Rice', 'Beverages'])
+            // Ensure we always have arrays
+            setMenu(Array.isArray(menuData) ? menuData : [])
+            setInventory(Array.isArray(invData) ? invData : [])
+
+            const cats = [...new Set((Array.isArray(menuData) ? menuData : []).map((m: MenuItem) => m.category))].sort()
+            setCategories(cats.length > 0 ? cats : ['Beverages', 'Biriyani', 'Curries', 'Rice', 'Snacks'])
             if (cats.length > 0) setCategory(cats[0])
-        } catch {
-            toast.error('Failed to load data')
+        } catch (error: any) {
+            console.error('Failed to load data:', error)
+            toast.error(`Failed to load data: ${error.message}`)
+            // Set safe defaults
+            setMenu([])
+            setInventory([])
+            setCategories(['Beverages', 'Biriyani', 'Curries', 'Rice', 'Snacks'])
         } finally {
             setLoading(false)
         }
@@ -131,6 +164,7 @@ const MenuManager = () => {
     const handleSubmit = async () => {
         if (!name.trim()) return toast.error('Enter dish name')
         if (!category) return toast.error('Select category')
+        if (mealPeriods.length === 0) return toast.error('Select at least one meal period')
         if (sizes.every(s => s.price <= 0)) return toast.error('Set at least one price')
 
         setUploading(true)
@@ -153,6 +187,7 @@ const MenuManager = () => {
         const payload = {
             name: name.trim(),
             category: category.trim(),
+            mealPeriods: normalizeMealPeriods(mealPeriods),
             sizes: sizes.filter(s => s.name && s.name.trim() && s.price > 0).map(s => ({
                 name: s.name.trim(),
                 price: Number(s.price)
@@ -160,7 +195,7 @@ const MenuManager = () => {
             recipe: recipe || [],
             extras: extras || [],
             mediaUrl: imageUrl || previewUrl || null,
-            available: true
+            available
         }
 
         console.log('📤 Sending payload to backend:', payload)
@@ -200,6 +235,8 @@ const MenuManager = () => {
         setEditingId(item.id)
         setName(item.name)
         setCategory(item.category)
+        setAvailable(item.available !== false)
+        setMealPeriods(normalizeMealPeriods(item.mealPeriods))
         setSizes(item.sizes.length > 0 ? item.sizes : [{ name: 'Small', price: 0 }, { name: 'Regular', price: 0 }, { name: 'Large', price: 0 }])
         setRecipe(item.recipe || [])
         setExtras(item.extras || [])
@@ -270,6 +307,8 @@ const MenuManager = () => {
         setEditingId(null)
         setName('')
         setCategory('')
+        setAvailable(true)
+        setMealPeriods([...MEAL_PERIODS])
         setSizes([{ name: 'Small', price: 0 }, { name: 'Regular', price: 0 }, { name: 'Large', price: 0 }])
         setRecipe([])
         setExtras([])
@@ -285,7 +324,7 @@ const MenuManager = () => {
 
     if (loading) return (
         <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center">
-            <Loader2 className="w-20 h-20 animate-spin text-cyan-400" />
+            <Loader2 className="w-20 h-20 animate-spin text-blue-300" />
         </div>
     )
 
@@ -294,7 +333,9 @@ const MenuManager = () => {
             <Toaster position="top-center" />
             <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-8 transition-colors">
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-black font-extrabold text-brand">PRO MENU MANAGER</h1>
+                    <div className="inline-flex items-center rounded-2xl bg-slate-900 px-6 py-3 shadow-lg">
+                        <h1 className="text-4xl font-extrabold text-white">PRO MENU MANAGER</h1>
+                    </div>
                     <p className="text-lg mt-2 text-gray-300">Recipe • Extras • Sizes • Image • Inventory Sync</p>
                     {editingId && (
                         <div className="mt-4 flex items-center justify-center gap-3">
@@ -356,9 +397,53 @@ const MenuManager = () => {
                                 </button>
                             </div>
 
+                            <label className="flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-lg font-semibold text-white">
+                                <input
+                                    type="checkbox"
+                                    checked={available}
+                                    onChange={e => setAvailable(e.target.checked)}
+                                    className="h-5 w-5 rounded border-white/30"
+                                />
+                                Available for POS and Online Order
+                            </label>
+
+                            <div className="bg-white/10 rounded-xl p-4 space-y-3">
+                                <div>
+                                    <h3 className="text-lg font-bold text-cyan-300">Meal Period</h3>
+                                    <p className="text-sm text-gray-300">Select one or more service periods.</p>
+                                </div>
+                                <div className="flex flex-wrap gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setMealPeriods([...MEAL_PERIODS])}
+                                        className={`px-4 py-2 rounded-full font-semibold ${mealPeriods.length === MEAL_PERIODS.length ? 'bg-cyan-500 text-white' : 'bg-white/10 text-white'}`}
+                                    >
+                                        All Day
+                                    </button>
+                                    {MEAL_PERIODS.map(period => {
+                                        const active = mealPeriods.includes(period)
+                                        return (
+                                            <button
+                                                key={period}
+                                                type="button"
+                                                onClick={() => setMealPeriods(prev => {
+                                                    const next = prev.includes(period)
+                                                        ? prev.filter(item => item !== period)
+                                                        : [...prev, period]
+                                                    return next.length === 0 ? [...MEAL_PERIODS] : next
+                                                })}
+                                                className={`px-4 py-2 rounded-full font-semibold ${active ? 'bg-emerald-500 text-white' : 'bg-white/10 text-white'}`}
+                                            >
+                                                {period}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
                             {/* SIZES */}
                             <div className="bg-white/10 rounded-xl p-5">
-                                <h3 className="text-lg font-bold text-cyan-300 mb-4">Sizes & Prices</h3>
+                                <h3 className="text-lg font-bold text-blue-300 mb-4">Sizes & Prices</h3>
                                 {sizes.map((s, i) => (
                                     <div key={i} className="flex gap-3 mb-3 items-center">
                                         <input
@@ -391,7 +476,7 @@ const MenuManager = () => {
 
                             {/* RECIPE */}
                             <div className="bg-white/10 rounded-xl p-5">
-                                <h3 className="text-lg font-bold text-green-400 mb-4">Recipe (Auto Deduct)</h3>
+                                <h3 className="text-lg font-bold text-green-300 mb-4">Recipe (Auto Deduct)</h3>
                                 <div className="space-y-3">
                                     <div className="flex flex-col gap-y-2">
                                         <select
@@ -534,7 +619,7 @@ const MenuManager = () => {
 
                 {/* CURRENT MENU */}
                 <div className="max-w-7xl mx-auto mt-12">
-                    <h2 className="text-3xl font-bold text-center mb-8 text-cyan-300">
+                    <h2 className="text-3xl font-bold text-center mb-8 text-blue-300">
                         Current Menu ({menu.length} items)
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -544,20 +629,32 @@ const MenuManager = () => {
                                 layout
                                 className="bg-white/10 backdrop-blur-xl rounded-3xl overflow-hidden border border-purple-500/50"
                             >
+                                <div className="flex items-center justify-between gap-3 px-5 pt-5">
+                                    <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${item.available === false ? 'bg-red-500/20 text-red-200 border border-red-400/40' : 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/40'}`}>
+                                        {item.available === false ? 'Not Available' : 'Available'}
+                                    </span>
+                                    <button
+                                        onClick={() => handleEdit(item)}
+                                        className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white hover:bg-white/20"
+                                    >
+                                        Edit
+                                    </button>
+                                </div>
                                 {item.mediaUrl ? (
                                     <img src={item.mediaUrl} alt={item.name} className="w-full h-64 object-cover" />
                                 ) : (
-                                    <div className="h-64 bg-gradient-to-br from-purple-800 to-pink-800 flex items-center justify-center">
+                                    <div className="h-64 bg-linear-to-br from-purple-800 to-pink-800 flex items-center justify-center">
                                         <Package className="w-20 h-20 text-white/20" />
                                     </div>
                                 )}
                                 <div className="p-6">
-                                    <h3 className="text-3xl font-bold text-cyan-300">{item.name}</h3>
+                                    <h3 className="text-3xl font-bold text-blue-300">{item.name}</h3>
                                     <p className="text-purple-300 text-lg">{item.category}</p>
+                                    <p className="text-cyan-300 text-sm font-semibold mt-1">{mealPeriodLabel(item.mealPeriods)}</p>
 
                                     <div className="mt-4 space-y-3">
                                         {sortSizes(item.sizes || []).map(s => (
-                                            <div key={s.name} className="flex justify-between text-green-400 font-bold text-xl">
+                                            <div key={s.name} className="flex justify-between text-green-300 font-bold text-xl">
                                                 <span>{s.name}</span>
                                                 <span>Rs {s.price}</span>
                                             </div>

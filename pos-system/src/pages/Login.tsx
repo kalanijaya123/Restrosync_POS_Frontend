@@ -28,17 +28,38 @@ const Login = () => {
 
             // Handle different backend response structures
             if (response.data) {
-                // Save token if provided
-                if (response.data.token) {
-                    localStorage.setItem('token', response.data.token)
+                const authUser = response.data.user || response.data
+                const currentUser = {
+                    id: authUser.id || '',
+                    name: authUser.username || authUser.name || form.username,
+                    email: authUser.email || '',
+                    role: authUser.role || 'Staff',
+                    canAccessPos: Boolean(authUser.canAccessPos),
+                    canAccessKds: Boolean(authUser.canAccessKds),
+                    canAccessOnlineOrder: Boolean(authUser.canAccessOnlineOrder),
+                    canManageDiscounts: Boolean(authUser.canManageDiscounts),
+                    canManageMenu: Boolean(authUser.canManageMenu),
+                    canManageInventory: Boolean(authUser.canManageInventory),
+                    canAccessKitchenStatus: Boolean(authUser.canAccessKitchenStatus),
+                    canAccessThirdPartyOrders: Boolean(authUser.canAccessThirdPartyOrders)
                 }
 
-                // Save user data
-                localStorage.setItem('currentUser', JSON.stringify({
-                    name: response.data.username || response.data.name || form.username,
-                    email: response.data.email || '',
-                    role: response.data.role || 'Staff'
-                }))
+                const canAccessPosApp = Boolean(
+                    currentUser.role === 'Manager' ||
+                    currentUser.canAccessPos ||
+                    currentUser.canManageMenu ||
+                    currentUser.canManageInventory ||
+                    currentUser.canAccessKitchenStatus ||
+                    currentUser.canAccessThirdPartyOrders
+                )
+
+                if (!canAccessPosApp) {
+                    setError('POS access has not been granted by a manager yet.')
+                    setLoading(false)
+                    return
+                }
+
+                localStorage.setItem('currentUser', JSON.stringify(currentUser))
                 navigate('/dashboard')
             } else {
                 setError('Invalid credentials')
@@ -55,11 +76,37 @@ const Login = () => {
                     )
 
                     if (user) {
-                        localStorage.setItem('currentUser', JSON.stringify({
+                        const currentUser = {
+                            id: user.id || '',
                             name: user.username,
                             email: user.email,
-                            role: user.role
-                        }))
+                            role: user.role || 'Staff',
+                            canAccessPos: Boolean(user.canAccessPos ?? true),
+                            canAccessKds: Boolean(user.canAccessKds ?? false),
+                            canAccessOnlineOrder: Boolean(user.canAccessOnlineOrder ?? false),
+                            canManageDiscounts: Boolean(user.canManageDiscounts ?? false),
+                            canManageMenu: Boolean(user.canManageMenu ?? false),
+                            canManageInventory: Boolean(user.canManageInventory ?? false),
+                            canAccessKitchenStatus: Boolean(user.canAccessKitchenStatus ?? false),
+                            canAccessThirdPartyOrders: Boolean(user.canAccessThirdPartyOrders ?? false)
+                        }
+
+                        const canAccessPosApp = Boolean(
+                            currentUser.role === 'Manager' ||
+                            currentUser.canAccessPos ||
+                            currentUser.canManageMenu ||
+                            currentUser.canManageInventory ||
+                            currentUser.canAccessKitchenStatus ||
+                            currentUser.canAccessThirdPartyOrders
+                        )
+
+                        if (!canAccessPosApp) {
+                            setError('POS access has not been granted by a manager yet.')
+                            setLoading(false)
+                            return
+                        }
+
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser))
                         navigate('/dashboard')
                     } else {
                         setError('Invalid username or password')
@@ -78,7 +125,7 @@ const Login = () => {
     }
 
     return (
-        <div className={`min-h-screen bg-gradient-to-br ${theme === 'dark' ? 'from-blue-900 to-slate-900' : 'from-blue-500 to-blue-700'} flex items-center justify-center p-6`}>
+        <div className={`min-h-screen bg-gradient-to-br from-blue-200 to-blue-300 dark:from-blue-300/30 dark:to-blue-200/30 flex items-center justify-center p-6`}>
             <div className={`${theme === 'dark' ? 'bg-slate-800 text-white' : 'bg-white text-gray-800'} rounded-2xl shadow-2xl w-full max-w-lg p-10`}>
                 {/* TITLE */}
                 <h1 className={`text-4xl font-bold text-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'} mb-1`}>Welcome Back</h1>

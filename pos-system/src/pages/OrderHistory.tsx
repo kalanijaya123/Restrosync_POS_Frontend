@@ -23,7 +23,9 @@ const OrderHistory = () => {
 
     return (
         <div>
-            <h1 className="text-5xl font-bold mb-10 text-black">Order History</h1>
+            <div className="inline-flex items-center rounded-2xl bg-slate-900 px-6 py-3 mb-10 shadow-lg">
+                <h1 className="text-5xl font-bold text-white">Order History</h1>
+            </div>
             <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
                 {loading ? (
                     <p className="p-20 text-center text-3xl text-gray-600">Loading history...</p>
